@@ -2,8 +2,8 @@ const fs = require("fs").promises;
 const path = require("path");
 
 // Define input and output paths
-const inputDir = "pruebas/datos_entrada/";
-const outputDir = "pruebas/datos_salida/";
+const inputDir = "../pruebas/datos_entrada/";
+const outputDir = "../pruebas/datos_salida/";
 
 // Definición de tipos de faltas
 const faltasGraves = [
