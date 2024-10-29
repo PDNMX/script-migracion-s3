@@ -297,32 +297,10 @@ function transformarServidorPublico(entrada, tipoSalida) {
 }
 
 function transformarParticular(entrada, tipoPersona) {
-  return {
-    id: entrada.id || "",
+  // Esquema base común
+  const esquemaBase = {
     fecha: entrada.fechaCaptura || "",
     expediente: entrada.expediente || "",
-    datosGenerales: {
-      nombreRazonSocial: entrada.particularSancionado?.nombreRazonSocial || "",
-      objetoSocial: entrada.particularSancionado?.objetoSocial || "",
-      rfc: entrada.particularSancionado?.rfc || "",
-      tipoDomicilio: "",
-      domicilioMexico: {
-        tipoVialidad: "",
-        nombreVialidad: "",
-        numeroExterior:
-          entrada.particularSancionado?.domicilioMexico?.numeroExterior || "",
-        numeroInterior:
-          entrada.particularSancionado?.domicilioMexico?.numeroInterior || "",
-        coloniaLocalidad: "",
-        municipioAlcaldia:
-          entrada.particularSancionado?.domicilioMexico?.municipio || "",
-        codigoPostal:
-          entrada.particularSancionado?.domicilioMexico?.codigoPostal || "",
-        entidadFederativa:
-          entrada.particularSancionado?.domicilioMexico?.entidadFederativa ||
-          "",
-      },
-    },
     dondeCometioLaFalta: {
       entidadFederativa: "",
       nivelOrdenGobierno: "",
@@ -338,47 +316,260 @@ function transformarParticular(entrada, tipoPersona) {
       {
         clave: "",
         valor: "",
-        normatividadInfringida: {
-          nombreNormatividad: "",
-          articulo: "",
-          fraccion: "",
-        },
+        normatividadInfringida: [
+          {
+            nombreNormatividad: "",
+            articulo: "",
+            fraccion: "",
+          },
+        ],
         descripcionHechos: entrada.causaMotivoHechos || "",
       },
     ],
     resolucion: {
-      tituloResolucion: "",
-      fechaResolucion: entrada.resolucion?.fechaResolucion || "",
-      fechaNotificacion: "",
+      tituloResolucion: entrada.resolucion?.sentido || "",
+      fechaResolucion: "",
+      fechaNotificacion: entrada.resolucion?.fechaNotificacion || "",
       urlResolucion: entrada.resolucion?.url || "",
       fechaResolucionFirme: "",
       fechaNotificacionFirme: "",
       urlResolucionFirme: "",
       fechaEjecucion: "",
+      ordenJurisdiccional: "",
       autoridadResolutora: entrada.autoridadSancionadora || "",
       autoridadInvestigadora: "",
       autoridadSubstanciadora: "",
     },
-    tipoSancion:
-      entrada.tipoSancion?.map((sancion) => ({
-        clave: sancion.clave || "",
-        inhabilitacion: {
-          plazoAnios: "",
-          plazoMeses: "",
-          plazoDias: "",
-          fechaInicial: entrada.inhabilitacion?.fechaInicial || "",
-          fechaFinal: entrada.inhabilitacion?.fechaFinal || "",
-        },
-        multa: {
-          monto: entrada.multa?.monto || "",
-          moneda: entrada.multa?.moneda?.valor || "",
-        },
-        otro: {
-          denominacionSancion: "",
-        },
-      })) || [],
     observaciones: entrada.observaciones || "",
   };
+
+  if (tipoPersona === "fisica") {
+    // Extraer nombres y apellidos del nombreRazonSocial
+    const nombreCompleto =
+      entrada.particularSancionado?.nombreRazonSocial || "";
+    const partes = nombreCompleto.split(" ");
+    const segundoApellido = partes.pop() || "";
+    const primerApellido = partes.pop() || "";
+    const nombres = partes.join(" ");
+
+    return {
+      ...esquemaBase,
+      datosGenerales: {
+        nombres,
+        primerApellido,
+        segundoApellido,
+        curp: "",
+        rfc: entrada.particularSancionado?.rfc || "",
+        tipoDomicilio: "",
+        domicilioMexico: {
+          tipoVialidad: "",
+          nombreVialidad:
+            entrada.particularSancionado?.domicilioMexico?.vialidad?.valor ||
+            "",
+          numeroExterior:
+            entrada.particularSancionado?.domicilioMexico?.numeroExterior || "",
+          numeroInterior:
+            entrada.particularSancionado?.domicilioMexico?.numeroInterior || "",
+          coloniaLocalidad:
+            entrada.particularSancionado?.domicilioMexico?.localidad?.valor ||
+            "",
+          municipioAlcaldia:
+            entrada.particularSancionado?.domicilioMexico?.municipio || "",
+          codigoPostal:
+            entrada.particularSancionado?.domicilioMexico?.codigoPostal || "",
+          entidadFederativa:
+            entrada.particularSancionado?.domicilioMexico?.entidadFederativa ||
+            "",
+        },
+        domicilioExtranjero: {
+          ciudad:
+            entrada.particularSancionado?.domicilioExtranjero
+              ?.ciudadLocalidad || "",
+          provincia:
+            entrada.particularSancionado?.domicilioExtranjero
+              ?.estadoProvincia || "",
+          calle: entrada.particularSancionado?.domicilioExtranjero?.calle || "",
+          numeroExterior:
+            entrada.particularSancionado?.domicilioExtranjero?.numeroExterior ||
+            "",
+          numeroInterior:
+            entrada.particularSancionado?.domicilioExtranjero?.numeroInterior ||
+            "",
+          codigoPostal:
+            entrada.particularSancionado?.domicilioExtranjero?.codigoPostal ||
+            "",
+          pais:
+            entrada.particularSancionado?.domicilioExtranjero?.pais?.valor ||
+            "",
+        },
+      },
+      tipoSancion:
+        entrada.tipoSancion?.map((sancion) => ({
+          clave: sancion.clave || "",
+          inhabilitacion: {
+            plazoAnios: "",
+            plazoMeses: "",
+            plazoDias: "",
+            fechaInicial: entrada.inhabilitacion?.fechaInicial || "",
+            fechaFinal: entrada.inhabilitacion?.fechaFinal || "",
+          },
+          indemnizacion: {
+            monto: "",
+            moneda: "",
+            plazoPago: {
+              anios: "",
+              meses: "",
+              dias: "",
+            },
+            efectivamenteCobrada: {
+              monto: "",
+              moneda: "",
+              fechaCobro: "",
+            },
+            fechaPagoTotal: "",
+          },
+          sancionEconomica: {
+            monto: entrada.multa?.monto || "",
+            moneda: entrada.multa?.moneda?.valor || "",
+            plazoPago: {
+              anios: "",
+              meses: "",
+              dias: "",
+            },
+            efectivamenteCobrada: {
+              monto: "",
+              moneda: "",
+              fechaCobro: "",
+            },
+          },
+          otro: "",
+          denominacionSancion: "",
+        })) || [],
+    };
+  } else {
+    // moral
+    return {
+      ...esquemaBase,
+      datosGenerales: {
+        nombreRazonSocial:
+          entrada.particularSancionado?.nombreRazonSocial || "",
+        rfc: entrada.particularSancionado?.rfc || "",
+        objetoSocial: entrada.particularSancionado?.objetoSocial || "",
+        tipoDomicilio: "",
+        domicilioMexico: {
+          tipoVialidad: "",
+          nombreVialidad:
+            entrada.particularSancionado?.domicilioMexico?.vialidad?.valor ||
+            "",
+          numeroExterior:
+            entrada.particularSancionado?.domicilioMexico?.numeroExterior || "",
+          numeroInterior:
+            entrada.particularSancionado?.domicilioMexico?.numeroInterior || "",
+          coloniaLocalidad:
+            entrada.particularSancionado?.domicilioMexico?.localidad?.valor ||
+            "",
+          municipioAlcaldia:
+            entrada.particularSancionado?.domicilioMexico?.municipio || "",
+          codigoPostal:
+            entrada.particularSancionado?.domicilioMexico?.codigoPostal || "",
+          entidadFederativa:
+            entrada.particularSancionado?.domicilioMexico?.entidadFederativa ||
+            "",
+        },
+        domicilioExtranjero: {
+          ciudad:
+            entrada.particularSancionado?.domicilioExtranjero
+              ?.ciudadLocalidad || "",
+          provincia:
+            entrada.particularSancionado?.domicilioExtranjero
+              ?.estadoProvincia || "",
+          calle: entrada.particularSancionado?.domicilioExtranjero?.calle || "",
+          numeroExterior:
+            entrada.particularSancionado?.domicilioExtranjero?.numeroExterior ||
+            "",
+          numeroInterior:
+            entrada.particularSancionado?.domicilioExtranjero?.numeroInterior ||
+            "",
+          codigoPostal:
+            entrada.particularSancionado?.domicilioExtranjero?.codigoPostal ||
+            "",
+          pais:
+            entrada.particularSancionado?.domicilioExtranjero?.pais?.valor ||
+            "",
+        },
+      },
+      datosDirGeneralReprLegal: {
+        directorGeneral: {
+          nombres: entrada.directorGeneral?.nombres || "",
+          primerApellido: entrada.directorGeneral?.primerApellido || "",
+          segundoApellido: entrada.directorGeneral?.segundoApellido || "",
+          rfc: "",
+          curp: entrada.directorGeneral?.curp || "",
+        },
+        representanteLegal: {
+          nombres: entrada.apoderadoLegal?.nombres || "",
+          primerApellido: entrada.apoderadoLegal?.primerApellido || "",
+          segundoApellido: entrada.apoderadoLegal?.segundoApellido || "",
+          rfc: "",
+          curp: entrada.apoderadoLegal?.curp || "",
+        },
+      },
+      tipoSancion:
+        entrada.tipoSancion?.map((sancion) => ({
+          clave: sancion.clave || "",
+          inhabilitacion: {
+            plazoAnios: 0,
+            plazoMeses: 0,
+            plazoDias: 0,
+            fechaInicial: entrada.inhabilitacion?.fechaInicial || "",
+            fechaFinal: entrada.inhabilitacion?.fechaFinal || "",
+          },
+          indemnizacion: {
+            monto: 0,
+            moneda: "",
+            plazoPago: {
+              anios: 0,
+              meses: 0,
+              dias: 0,
+            },
+            efectivamenteCobrada: {
+              monto: 0,
+              moneda: "",
+              fechaCobro: "",
+            },
+            fechaPagoTotal: "",
+          },
+          sancionEconomica: {
+            monto: entrada.multa?.monto || 0,
+            moneda: entrada.multa?.moneda?.valor || "",
+            plazoPago: {
+              anios: 0,
+              meses: 0,
+              dias: 0,
+            },
+            efectivamenteCobrada: {
+              monto: 0,
+              moneda: "",
+              fechaCobro: "",
+            },
+            fechaPagoTotal: "",
+          },
+          suspensionActividades: {
+            plazoSuspensionAnios: 0,
+            plazoSuspensionMeses: 0,
+            plazoSuspensionDias: 0,
+            fechaInicial: "",
+            fechaFinal: "",
+          },
+          disolucionSociedad: {
+            fechaDisolucion: "",
+          },
+          otro: {
+            denominacionSancion: "",
+          },
+        })) || [],
+    };
+  }
 }
 
 async function crearDirectorioSiNoExiste(dir) {
