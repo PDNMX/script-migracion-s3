@@ -129,3 +129,4 @@ dist
 .yarn/install-state.gz
 .pnp.*
 pruebas/
+json_ejemplo_directus

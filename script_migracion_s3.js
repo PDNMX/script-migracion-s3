@@ -28,6 +28,82 @@ const faltasNoGraves = [
   "ADMINISTRATIVA NO GRAVE",
 ];
 
+function obtenerClaveFalta(tipoFalta) {
+  // Si es un string "Dato no proporcionado"
+  if (tipoFalta === "Dato no proporcionado") {
+    return {
+      clave: "OTRO",
+      incluirValorOriginal: true,
+      valorOriginal: tipoFalta,
+    };
+  }
+
+  // Si es un objeto
+  if (typeof tipoFalta === "object") {
+    const valor = tipoFalta.valor || "";
+
+    // Si el valor es "OTRO" o la clave es "OTRO"
+    if (valor === "OTRO" || tipoFalta.clave === "OTRO") {
+      return {
+        clave: "OTRO",
+        incluirValorOriginal: true,
+        valorOriginal: valor,
+      };
+    }
+
+    // Normalizar el valor para comparación
+    const valorNormalizado = valor.toUpperCase();
+
+    // Mapeo de faltas conocidas
+    const mapeoFaltas = [
+      { buscar: "ABUSO DE FUNCIONES", clave: "ABUSO_FUNCIONES" },
+      { buscar: "COHECHO", clave: "COHECHO" },
+      { buscar: "PECULADO", clave: "PECULADO" },
+      { buscar: "DESVIO DE RECURSOS", clave: "DESVIO_RECURSOS_PUBLICOS" },
+      {
+        buscar: "UTILIZACION INDEBIDA DE INFORMACION",
+        clave: "UTILIZACION_INDEBIDA_INFORMACION",
+      },
+      { buscar: "CONFLICTO DE INTERES", clave: "CONFLICTO_INTERES" },
+      { buscar: "CONTRATACION INDEBIDA", clave: "CONTRATACION_INDEBIDA" },
+      { buscar: "ENRIQUECIMIENTO OCULTO", clave: "ENRIQUECIMIENTO_OCULTO" },
+      { buscar: "TRAFICO DE INFLUENCIAS", clave: "TRAFICO_INFLUENCIAS" },
+      { buscar: "SIMULACION", clave: "SIMULACION_ACTO_JURIDICO" },
+      { buscar: "ENCUBRIMIENTO", clave: "ENCUBRIMIENTO" },
+      { buscar: "DESACATO", clave: "DESACATO" },
+      { buscar: "NEPOTISMO", clave: "NEPOTISMO" },
+      { buscar: "OBSTRUCCION", clave: "OBSTRUCCION" },
+    ];
+
+    // Buscar coincidencia
+    const coincidencia = mapeoFaltas.find((item) =>
+      valorNormalizado.includes(item.buscar)
+    );
+
+    if (coincidencia) {
+      return {
+        clave: coincidencia.clave,
+        incluirValorOriginal: false,
+      };
+    }
+
+    // Si no hay coincidencia, retornar el valor original
+    return {
+      clave: "OTRO",
+      incluirValorOriginal: true,
+      valorOriginal: valor,
+    };
+  }
+
+  // Si es cualquier otro caso
+  return {
+    clave: "OTRO",
+    incluirValorOriginal: true,
+    valorOriginal: tipoFalta || "",
+  };
+}
+
+//agregar if para las faltasfaltasGraves
 function clasificarPorTipoFalta(falta) {
   // Si no hay falta, va a otro
   if (!falta) {
@@ -53,6 +129,112 @@ function clasificarPorTipoFalta(falta) {
   }
 
   return "otro";
+}
+
+function construirTipoSancionParticular(sancion, entrada, tipoPersona) {
+  const tipoSancionBase = {
+    clave: sancion.clave || "",
+  };
+
+  switch (sancion.clave) {
+    case "I": // Inhabilitación
+      return {
+        ...tipoSancionBase,
+        inhabilitacion: {
+          plazoAnios: "",
+          plazoMeses: "",
+          plazoDias: "",
+          fechaInicial: entrada.inhabilitacion?.fechaInicial || "",
+          fechaFinal: entrada.inhabilitacion?.fechaFinal || "",
+        },
+      };
+
+    case "SE": // Sanción Económica
+      return {
+        ...tipoSancionBase,
+        sancionEconomica: {
+          monto: entrada.multa?.monto || "",
+          moneda: entrada.multa?.moneda?.valor || "",
+          plazoPago: {
+            anios: "",
+            meses: "",
+            dias: "",
+          },
+          efectivamenteCobrada: {
+            monto: "",
+            moneda: "",
+            fechaCobro: "",
+          },
+          fechaPagoTotal: "",
+        },
+      };
+
+    case "IN": // Indemnización
+      return {
+        ...tipoSancionBase,
+        indemnizacion: {
+          monto: "",
+          moneda: "",
+          plazoPago: {
+            anios: "",
+            meses: "",
+            dias: "",
+          },
+          efectivamenteCobrada: {
+            monto: "",
+            moneda: "",
+            fechaCobro: "",
+          },
+          fechaPagoTotal: "",
+        },
+      };
+
+    case "SA": // Suspensión de Actividades (solo para morales)
+      if (tipoPersona === "moral") {
+        return {
+          ...tipoSancionBase,
+          suspensionActividades: {
+            plazoSuspensionAnios: "",
+            plazoSuspensionMeses: "",
+            plazoSuspensionDias: "",
+            fechaInicial: "",
+            fechaFinal: "",
+          },
+        };
+      }
+      break;
+
+    case "DS": // Disolución de Sociedad (solo para morales)
+      if (tipoPersona === "moral") {
+        return {
+          ...tipoSancionBase,
+          disolucionSociedad: {
+            fechaDisolucion: "",
+          },
+        };
+      }
+      break;
+
+    case "O": // Otro
+      if (tipoPersona === "moral") {
+        return {
+          ...tipoSancionBase,
+          otro: {
+            denominacionSancion: "",
+          },
+        };
+      } else {
+        return {
+          ...tipoSancionBase,
+          otro: "",
+          denominacionSancion: "",
+        };
+      }
+      break;
+
+    default:
+      return tipoSancionBase;
+  }
 }
 
 function construirTipoSancion(sancion, entrada, tipoEsquema) {
@@ -169,6 +351,8 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
 }
 
 function transformarServidorPublico(entrada, tipoSalida) {
+  const resultadoFalta = obtenerClaveFalta(entrada.tipoFalta);
+
   const esquemaBase = {
     fecha: entrada.fechaCaptura || "",
     expediente: entrada.expediente || "",
@@ -199,23 +383,28 @@ function transformarServidorPublico(entrada, tipoSalida) {
     },
   };
 
+  // Construir objeto faltaCometida
+  const faltaCometidaBase = {
+    clave: resultadoFalta.clave,
+    normatividadInfringida: [
+      {
+        nombreNormatividad: "",
+        articulo: "",
+        fraccion: "",
+      },
+    ],
+    descripcionHechos: entrada.causaMotivoHechos || "",
+  };
+
+  // Agregar valor solo si es necesario
+  if (resultadoFalta.incluirValorOriginal) {
+    faltaCometidaBase.valor = resultadoFalta.valorOriginal;
+  }
+
   if (tipoSalida === "graves" || tipoSalida === "otro") {
     return {
       ...esquemaBase,
-      faltaCometida: [
-        {
-          clave: entrada.tipoFalta?.clave || "",
-          valor: entrada.tipoFalta?.valor || "",
-          normatividadInfringida: [
-            {
-              nombreNormatividad: "",
-              articulo: "",
-              fraccion: "",
-            },
-          ],
-          descripcionHechos: entrada.causaMotivoHechos || "",
-        },
-      ],
+      faltaCometida: [faltaCometidaBase],
       resolucion: {
         tituloDocumento: "",
         fechaResolucion: entrada.resolucion?.fechaResolucion || "",
@@ -240,20 +429,7 @@ function transformarServidorPublico(entrada, tipoSalida) {
     // no_graves
     return {
       ...esquemaBase,
-      faltaCometida: [
-        {
-          clave: entrada.tipoFalta?.clave || "",
-          valor: entrada.tipoFalta?.valor || "",
-          normatividadInfringida: [
-            {
-              nombreNormatividad: "",
-              articulo: "",
-              fraccion: "",
-            },
-          ],
-          descripcionHechos: entrada.causaMotivoHechos || "",
-        },
-      ],
+      faltaCometida: [faltaCometidaBase],
       resolucion: {
         tituloDocumento: "",
         fechaResolucion: entrada.resolucion?.fechaResolucion || "",
@@ -515,59 +691,11 @@ function transformarParticular(entrada, tipoPersona) {
         },
       },
       tipoSancion:
-        entrada.tipoSancion?.map((sancion) => ({
-          clave: sancion.clave || "",
-          inhabilitacion: {
-            plazoAnios: 0,
-            plazoMeses: 0,
-            plazoDias: 0,
-            fechaInicial: entrada.inhabilitacion?.fechaInicial || "",
-            fechaFinal: entrada.inhabilitacion?.fechaFinal || "",
-          },
-          indemnizacion: {
-            monto: 0,
-            moneda: "",
-            plazoPago: {
-              anios: 0,
-              meses: 0,
-              dias: 0,
-            },
-            efectivamenteCobrada: {
-              monto: 0,
-              moneda: "",
-              fechaCobro: "",
-            },
-            fechaPagoTotal: "",
-          },
-          sancionEconomica: {
-            monto: entrada.multa?.monto || 0,
-            moneda: entrada.multa?.moneda?.valor || "",
-            plazoPago: {
-              anios: 0,
-              meses: 0,
-              dias: 0,
-            },
-            efectivamenteCobrada: {
-              monto: 0,
-              moneda: "",
-              fechaCobro: "",
-            },
-            fechaPagoTotal: "",
-          },
-          suspensionActividades: {
-            plazoSuspensionAnios: 0,
-            plazoSuspensionMeses: 0,
-            plazoSuspensionDias: 0,
-            fechaInicial: "",
-            fechaFinal: "",
-          },
-          disolucionSociedad: {
-            fechaDisolucion: "",
-          },
-          otro: {
-            denominacionSancion: "",
-          },
-        })) || [],
+        entrada.tipoSancion
+          ?.map((sancion) =>
+            construirTipoSancionParticular(sancion, entrada, tipoPersona)
+          )
+          .filter(Boolean) || [],
     };
   }
 }
