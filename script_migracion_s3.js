@@ -317,8 +317,11 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
       ...base,
     };
 
+    let tipoSancionEncontrado = false;
+
     // Suspension (S)
     if (sancion.clave === "S") {
+      tipoSancionEncontrado = true;
       sancionGrave.suspension = {
         plazoMeses: "",
         plazoDias: "",
@@ -329,6 +332,7 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
 
     // Destitución (D)
     if (sancion.clave === "D") {
+      tipoSancionEncontrado = true;
       sancionGrave.destitucionEmpleo = {
         fechaDestitucion: "",
       };
@@ -336,6 +340,7 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
 
     // Inhabilitación (I)
     if (sancion.clave === "I") {
+      tipoSancionEncontrado = true;
       sancionGrave.inhabilitacion = {
         plazoAnios: "",
         plazoMeses: "",
@@ -347,6 +352,7 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
 
     // Sanción Económica (SE)
     if (sancion.clave === "SE") {
+      tipoSancionEncontrado = true;
       sancionGrave.sancionEconomica = {
         monto: entrada.multa?.monto || "",
         moneda: entrada.multa?.moneda?.valor || "",
@@ -364,10 +370,12 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
       };
     }
 
-    // Otro
-    sancionGrave.otro = {
-      denominacionSancion: "",
-    };
+    // Solo agregar otro si no se encontró un tipo de sanción
+    if (!tipoSancionEncontrado) {
+      sancionGrave.otro = {
+        denominacionSancion: sancion.valor || "",
+      };
+    }
 
     return sancionGrave;
   } else {
@@ -376,8 +384,11 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
       ...base,
     };
 
+    let tipoSancionEncontrado = false;
+
     // Amonestación (A)
     if (sancion.clave === "A") {
+      tipoSancionEncontrado = true;
       sancionNoGrave.amonestacion = {
         tipo: "",
       };
@@ -385,6 +396,7 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
 
     // Suspensión (S)
     if (sancion.clave === "S") {
+      tipoSancionEncontrado = true;
       sancionNoGrave.suspension = {
         plazoMeses: "",
         plazoDias: "",
@@ -395,6 +407,7 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
 
     // Destitución (D)
     if (sancion.clave === "D") {
+      tipoSancionEncontrado = true;
       sancionNoGrave.destitucionEmpleo = {
         fechaDestitucion: "",
       };
@@ -402,6 +415,7 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
 
     // Inhabilitación (I)
     if (sancion.clave === "I") {
+      tipoSancionEncontrado = true;
       sancionNoGrave.inhabilitacion = {
         plazoAnios: "",
         plazoMeses: "",
@@ -411,10 +425,12 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
       };
     }
 
-    // Otro
-    sancionNoGrave.otro = {
-      denominacionSancion: "",
-    };
+    // Solo agregar otro si no se encontró un tipo de sanción
+    if (!tipoSancionEncontrado) {
+      sancionNoGrave.otro = {
+        denominacionSancion: sancion.valor || "",
+      };
+    }
 
     return sancionNoGrave;
   }
