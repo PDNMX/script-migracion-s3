@@ -28,6 +28,36 @@ const faltasNoGraves = [
   "ADMINISTRATIVA NO GRAVE",
 ];
 
+function mapearTipoSancion(clave, tipoEsquema) {
+  // Mapeo del catálogo original a los nuevos valores
+  const mapeoGraves = {
+    I: "INHABILITACION",
+    SE: "SANCION_ECONOMICA",
+    S: "SUSPENSION",
+    D: "DESTITUCION",
+    M: "SANCION_ECONOMICA",
+    IRSC: "SANCION_ECONOMICA",
+    O: "OTRO",
+  };
+
+  const mapeoNoGraves = {
+    I: "INHABILITACION",
+    S: "SUSPENSION",
+    D: "DESTITUCION",
+    A: "AMONESTACION",
+    O: "OTRO",
+  };
+
+  // Normalizar la clave de entrada
+  const claveNormalizada = clave.toUpperCase();
+
+  // Seleccionar el mapeo según el tipo de esquema
+  const mapeo = tipoEsquema === "no_graves" ? mapeoNoGraves : mapeoGraves;
+
+  // Retornar el valor mapeado o OTRO si no hay coincidencia
+  return mapeo[claveNormalizada] || "OTRO";
+}
+
 function obtenerClaveFalta(tipoFalta) {
   // Si es un string "Dato no proporcionado"
   if (tipoFalta === "Dato no proporcionado") {
@@ -103,7 +133,6 @@ function obtenerClaveFalta(tipoFalta) {
   };
 }
 
-//agregar if para las faltasfaltasGraves
 function clasificarPorTipoFalta(falta) {
   // Si no hay falta, va a otro
   if (!falta) {
@@ -202,8 +231,10 @@ function obtenerClaveFaltaNoGrave(tipoFalta) {
 }
 
 function construirTipoSancion(sancion, entrada, tipoEsquema) {
+  const claveMapeada = mapearTipoSancion(sancion.clave || "", tipoEsquema);
+
   const base = {
-    clave: sancion.valor || "",
+    clave: claveMapeada,
   };
 
   if (tipoEsquema === "graves" || tipoEsquema === "otro") {
@@ -211,64 +242,56 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
       ...base,
     };
 
-    let tipoSancionEncontrado = false;
+    // Usar la clave mapeada para determinar la estructura
+    switch (claveMapeada) {
+      case "SUSPENSION":
+        sancionGrave.suspension = {
+          plazoMeses: "",
+          plazoDias: "",
+          fechaInicial: "",
+          fechaFinal: "",
+        };
+        break;
 
-    // Suspension (S)
-    if (sancion.clave === "S") {
-      tipoSancionEncontrado = true;
-      sancionGrave.suspension = {
-        plazoMeses: "",
-        plazoDias: "",
-        fechaInicial: "",
-        fechaFinal: "",
-      };
-    }
+      case "DESTITUCION":
+        sancionGrave.destitucionEmpleo = {
+          fechaDestitucion: "",
+        };
+        break;
 
-    // Destitución (D)
-    if (sancion.clave === "D") {
-      tipoSancionEncontrado = true;
-      sancionGrave.destitucionEmpleo = {
-        fechaDestitucion: "",
-      };
-    }
+      case "INHABILITACION":
+        sancionGrave.inhabilitacion = {
+          plazoAnios: "",
+          plazoMeses: "",
+          plazoDias: "",
+          fechaInicial: entrada.inhabilitacion?.fechaInicial || "",
+          fechaFinal: entrada.inhabilitacion?.fechaFinal || "",
+        };
+        break;
 
-    // Inhabilitación (I)
-    if (sancion.clave === "I") {
-      tipoSancionEncontrado = true;
-      sancionGrave.inhabilitacion = {
-        plazoAnios: "",
-        plazoMeses: "",
-        plazoDias: "",
-        fechaInicial: entrada.inhabilitacion?.fechaInicial || "",
-        fechaFinal: entrada.inhabilitacion?.fechaFinal || "",
-      };
-    }
+      case "SANCION_ECONOMICA":
+        sancionGrave.sancionEconomica = {
+          monto: entrada.multa?.monto || "",
+          moneda: entrada.multa?.moneda?.valor || "",
+          plazoPago: {
+            anios: "",
+            meses: "",
+            dias: "",
+          },
+          sancionEfectivamenteCobrada: {
+            monto: "",
+            moneda: "",
+            fechaCobro: "",
+          },
+          fechaPagoTotal: "",
+        };
+        break;
 
-    // Sanción Económica (SE)
-    if (sancion.clave === "SE") {
-      tipoSancionEncontrado = true;
-      sancionGrave.sancionEconomica = {
-        monto: entrada.multa?.monto || "",
-        moneda: entrada.multa?.moneda?.valor || "",
-        plazoPago: {
-          anios: "",
-          meses: "",
-          dias: "",
-        },
-        sancionEfectivamenteCobrada: {
-          monto: "",
-          moneda: "",
-          fechaCobro: "",
-        },
-        fechaPagoTotal: "",
-      };
-    }
-
-    // Solo agregar otro si no se encontró un tipo de sanción
-    if (!tipoSancionEncontrado) {
-      sancionGrave.otro = {
-        denominacionSancion: sancion.valor || "",
-      };
+      case "OTRO":
+        sancionGrave.otro = {
+          denominacionSancion: sancion.valor || "",
+        };
+        break;
     }
 
     return sancionGrave;
@@ -278,52 +301,44 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
       ...base,
     };
 
-    let tipoSancionEncontrado = false;
+    // Usar la clave mapeada para determinar la estructura
+    switch (claveMapeada) {
+      case "AMONESTACION":
+        sancionNoGrave.amonestacion = {
+          tipo: "",
+        };
+        break;
 
-    // Amonestación (A)
-    if (sancion.clave === "A") {
-      tipoSancionEncontrado = true;
-      sancionNoGrave.amonestacion = {
-        tipo: "",
-      };
-    }
+      case "SUSPENSION":
+        sancionNoGrave.suspension = {
+          plazoMeses: "",
+          plazoDias: "",
+          plazoFechaInicial: "",
+          plazoFechaFinal: "",
+        };
+        break;
 
-    // Suspensión (S)
-    if (sancion.clave === "S") {
-      tipoSancionEncontrado = true;
-      sancionNoGrave.suspension = {
-        plazoMeses: "",
-        plazoDias: "",
-        plazoFechaInicial: "",
-        plazoFechaFinal: "",
-      };
-    }
+      case "DESTITUCION":
+        sancionNoGrave.destitucionEmpleo = {
+          fechaDestitucion: "",
+        };
+        break;
 
-    // Destitución (D)
-    if (sancion.clave === "D") {
-      tipoSancionEncontrado = true;
-      sancionNoGrave.destitucionEmpleo = {
-        fechaDestitucion: "",
-      };
-    }
+      case "INHABILITACION":
+        sancionNoGrave.inhabilitacion = {
+          plazoAnios: "",
+          plazoMeses: "",
+          plazoDias: "",
+          plazoFechaInicial: entrada.inhabilitacion?.fechaInicial || "",
+          plazoFechaFinal: entrada.inhabilitacion?.fechaFinal || "",
+        };
+        break;
 
-    // Inhabilitación (I)
-    if (sancion.clave === "I") {
-      tipoSancionEncontrado = true;
-      sancionNoGrave.inhabilitacion = {
-        plazoAnios: "",
-        plazoMeses: "",
-        plazoDias: "",
-        plazoFechaInicial: entrada.inhabilitacion?.fechaInicial || "",
-        plazoFechaFinal: entrada.inhabilitacion?.fechaFinal || "",
-      };
-    }
-
-    // Solo agregar otro si no se encontró un tipo de sanción
-    if (!tipoSancionEncontrado) {
-      sancionNoGrave.otro = {
-        denominacionSancion: sancion.valor || "",
-      };
+      case "OTRO":
+        sancionNoGrave.otro = {
+          denominacionSancion: sancion.valor || "",
+        };
+        break;
     }
 
     return sancionNoGrave;
