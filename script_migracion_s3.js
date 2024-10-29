@@ -55,6 +55,119 @@ function clasificarPorTipoFalta(falta) {
   return "otro";
 }
 
+function construirTipoSancion(sancion, entrada, tipoEsquema) {
+  const base = {
+    clave: sancion.valor || "",
+  };
+
+  if (tipoEsquema === "graves" || tipoEsquema === "otro") {
+    const sancionGrave = {
+      ...base,
+    };
+
+    // Suspension (S)
+    if (sancion.clave === "S") {
+      sancionGrave.suspension = {
+        plazoMeses: "",
+        plazoDias: "",
+        fechaInicial: "",
+        fechaFinal: "",
+      };
+    }
+
+    // Destitución (D)
+    if (sancion.clave === "D") {
+      sancionGrave.destitucionEmpleo = {
+        fechaDestitucion: "",
+      };
+    }
+
+    // Inhabilitación (I)
+    if (sancion.clave === "I") {
+      sancionGrave.inhabilitacion = {
+        plazoAnios: "",
+        plazoMeses: "",
+        plazoDias: "",
+        fechaInicial: entrada.inhabilitacion?.fechaInicial || "",
+        fechaFinal: entrada.inhabilitacion?.fechaFinal || "",
+      };
+    }
+
+    // Sanción Económica (SE)
+    if (sancion.clave === "SE") {
+      sancionGrave.sancionEconomica = {
+        monto: entrada.multa?.monto || "",
+        moneda: entrada.multa?.moneda?.valor || "",
+        plazoPago: {
+          anios: "",
+          meses: "",
+          dias: "",
+        },
+        sancionEfectivamenteCobrada: {
+          monto: "",
+          moneda: "",
+          fechaCobro: "",
+        },
+        fechaPagoTotal: "",
+      };
+    }
+
+    // Otro
+    sancionGrave.otro = {
+      denominacionSancion: "",
+    };
+
+    return sancionGrave;
+  } else {
+    // no_graves
+    const sancionNoGrave = {
+      ...base,
+    };
+
+    // Amonestación (A)
+    if (sancion.clave === "A") {
+      sancionNoGrave.amonestacion = {
+        tipo: "",
+      };
+    }
+
+    // Suspensión (S)
+    if (sancion.clave === "S") {
+      sancionNoGrave.suspension = {
+        plazoMeses: "",
+        plazoDias: "",
+        plazoFechaInicial: "",
+        plazoFechaFinal: "",
+      };
+    }
+
+    // Destitución (D)
+    if (sancion.clave === "D") {
+      sancionNoGrave.destitucionEmpleo = {
+        fechaDestitucion: "",
+      };
+    }
+
+    // Inhabilitación (I)
+    if (sancion.clave === "I") {
+      sancionNoGrave.inhabilitacion = {
+        plazoAnios: "",
+        plazoMeses: "",
+        plazoDias: "",
+        plazoFechaInicial: entrada.inhabilitacion?.fechaInicial || "",
+        plazoFechaFinal: entrada.inhabilitacion?.fechaFinal || "",
+      };
+    }
+
+    // Otro
+    sancionNoGrave.otro = {
+      denominacionSancion: "",
+    };
+
+    return sancionNoGrave;
+  }
+}
+
 function transformarServidorPublico(entrada, tipoSalida) {
   const esquemaBase = {
     fecha: entrada.fechaCaptura || "",
@@ -73,9 +186,11 @@ function transformarServidorPublico(entrada, tipoSalida) {
       ambitoPublico: "",
       nombreEntePublico: entrada.institucionDependencia?.nombre || "",
       siglasEntePublico: entrada.institucionDependencia?.siglas || "",
-      nivelJerarquico:
-        "obtenerNivelJerarquico(entrada.servidorPublicoSancionado?.puesto)",
-      denominacion: entrada.servidorPublicoSancionado?.puesto || "",
+      nivelJerarquico: {
+        clave: "otro",
+        valor: entrada.servidorPublicoSancionado?.puesto || "",
+      },
+      denominacion: "",
       areaAdscripcion: "",
     },
     origenProcedimiento: {
@@ -116,43 +231,9 @@ function transformarServidorPublico(entrada, tipoSalida) {
         autoridadSubstanciadora: "",
       },
       tipoSancion:
-        entrada.tipoSancion?.map((sancion) => ({
-          clave: sancion.clave || "",
-          suspension: {
-            plazoMeses: "",
-            plazoDias: "",
-            fechaInicial: "",
-            fechaFinal: "",
-          },
-          destitucionEmpleo: {
-            fechaDestitucion: "",
-          },
-          inhabilitacion: {
-            plazoAnios: "",
-            plazoMeses: "",
-            plazoDias: "",
-            fechaInicial: entrada.inhabilitacion?.fechaInicial || "",
-            fechaFinal: entrada.inhabilitacion?.fechaFinal || "",
-          },
-          sancionEconomica: {
-            monto: entrada.multa?.monto || "",
-            moneda: entrada.multa?.moneda?.valor || "",
-            plazoPago: {
-              anios: "",
-              meses: "",
-              dias: "",
-            },
-            sancionEfectivamenteCobrada: {
-              monto: "",
-              moneda: "",
-              fechaCobro: "",
-            },
-            fechaPagoTotal: "",
-          },
-          otro: {
-            denominacionSancion: "",
-          },
-        })) || [],
+        entrada.tipoSancion?.map((sancion) =>
+          construirTipoSancion(sancion, entrada, tipoSalida)
+        ) || [],
       observaciones: entrada.observaciones || "",
     };
   } else {
