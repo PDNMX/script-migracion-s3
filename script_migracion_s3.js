@@ -131,6 +131,76 @@ function clasificarPorTipoFalta(falta) {
   return "otro";
 }
 
+function obtenerClaveFaltaNoGrave(tipoFalta) {
+  // Si es un string "Dato no proporcionado"
+  if (tipoFalta === "Dato no proporcionado") {
+    return {
+      clave: "OTRO",
+      incluirValorOriginal: true,
+      valorOriginal: tipoFalta,
+    };
+  }
+
+  // Si es un objeto
+  if (typeof tipoFalta === "object") {
+    const valor = tipoFalta.valor || "";
+
+    // Si el valor es "OTRO" o la clave es "OTRO"
+    if (valor === "OTRO" || tipoFalta.clave === "OTRO") {
+      return {
+        clave: "OTRO",
+        incluirValorOriginal: true,
+        valorOriginal: valor,
+      };
+    }
+
+    // Normalizar el valor para comparación
+    const valorNormalizado = valor.toUpperCase();
+
+    // Mapeo de faltas no graves
+    const mapeoFaltasNoGraves = [
+      { buscar: "CUMPLIR CON LAS FUNCIONES", clave: "CUMPLIR_FUNCIONES" },
+      { buscar: "DENUNCIAR LAS FALTAS", clave: "DENUNCIAR_FALTAS" },
+      { buscar: "ATENDER LAS INSTRUCCIONES", clave: "ATENDER_INSTRUCCIONES" },
+      { buscar: "PRESENTAR DECLARACIONES", clave: "DECLARACIONES" },
+      { buscar: "CUSTODIAR DOCUMENTACION", clave: "CUSTODIAR_DOCUMENTACION" },
+      { buscar: "SUPERVISAR", clave: "SUPERVISAR_ART_49_LGRA" },
+      { buscar: "RENDIR CUENTAS", clave: "RENDIR_CUENTAS" },
+      {
+        buscar: "COLABORAR EN PROCEDIMIENTOS",
+        clave: "COLABORAR_PROCEDIMIENTOS",
+      },
+      { buscar: "CAUSAR DAÑOS", clave: "CAUSAR_DANOS" },
+    ];
+
+    // Buscar coincidencia
+    const coincidencia = mapeoFaltasNoGraves.find((item) =>
+      valorNormalizado.includes(item.buscar)
+    );
+
+    if (coincidencia) {
+      return {
+        clave: coincidencia.clave,
+        incluirValorOriginal: false,
+      };
+    }
+
+    // Si no hay coincidencia, retornar el valor original
+    return {
+      clave: "OTRO",
+      incluirValorOriginal: true,
+      valorOriginal: valor,
+    };
+  }
+
+  // Si es cualquier otro caso
+  return {
+    clave: "OTRO",
+    incluirValorOriginal: true,
+    valorOriginal: tipoFalta || "",
+  };
+}
+
 function construirTipoSancionParticular(sancion, entrada, tipoPersona) {
   const tipoSancionBase = {
     clave: sancion.clave || "",
@@ -427,6 +497,7 @@ function transformarServidorPublico(entrada, tipoSalida) {
     };
   } else {
     // no_graves
+    const resultadoFalta = obtenerClaveFaltaNoGrave(entrada.tipoFalta);
     return {
       ...esquemaBase,
       faltaCometida: [faltaCometidaBase],
