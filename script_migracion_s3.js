@@ -201,112 +201,6 @@ function obtenerClaveFaltaNoGrave(tipoFalta) {
   };
 }
 
-function construirTipoSancionParticular(sancion, entrada, tipoPersona) {
-  const tipoSancionBase = {
-    clave: sancion.clave || "",
-  };
-
-  switch (sancion.clave) {
-    case "I": // Inhabilitación
-      return {
-        ...tipoSancionBase,
-        inhabilitacion: {
-          plazoAnios: "",
-          plazoMeses: "",
-          plazoDias: "",
-          fechaInicial: entrada.inhabilitacion?.fechaInicial || "",
-          fechaFinal: entrada.inhabilitacion?.fechaFinal || "",
-        },
-      };
-
-    case "SE": // Sanción Económica
-      return {
-        ...tipoSancionBase,
-        sancionEconomica: {
-          monto: entrada.multa?.monto || "",
-          moneda: entrada.multa?.moneda?.valor || "",
-          plazoPago: {
-            anios: "",
-            meses: "",
-            dias: "",
-          },
-          efectivamenteCobrada: {
-            monto: "",
-            moneda: "",
-            fechaCobro: "",
-          },
-          fechaPagoTotal: "",
-        },
-      };
-
-    case "IN": // Indemnización
-      return {
-        ...tipoSancionBase,
-        indemnizacion: {
-          monto: "",
-          moneda: "",
-          plazoPago: {
-            anios: "",
-            meses: "",
-            dias: "",
-          },
-          efectivamenteCobrada: {
-            monto: "",
-            moneda: "",
-            fechaCobro: "",
-          },
-          fechaPagoTotal: "",
-        },
-      };
-
-    case "SA": // Suspensión de Actividades (solo para morales)
-      if (tipoPersona === "moral") {
-        return {
-          ...tipoSancionBase,
-          suspensionActividades: {
-            plazoSuspensionAnios: "",
-            plazoSuspensionMeses: "",
-            plazoSuspensionDias: "",
-            fechaInicial: "",
-            fechaFinal: "",
-          },
-        };
-      }
-      break;
-
-    case "DS": // Disolución de Sociedad (solo para morales)
-      if (tipoPersona === "moral") {
-        return {
-          ...tipoSancionBase,
-          disolucionSociedad: {
-            fechaDisolucion: "",
-          },
-        };
-      }
-      break;
-
-    case "O": // Otro
-      if (tipoPersona === "moral") {
-        return {
-          ...tipoSancionBase,
-          otro: {
-            denominacionSancion: "",
-          },
-        };
-      } else {
-        return {
-          ...tipoSancionBase,
-          otro: "",
-          denominacionSancion: "",
-        };
-      }
-      break;
-
-    default:
-      return tipoSancionBase;
-  }
-}
-
 function construirTipoSancion(sancion, entrada, tipoEsquema) {
   const base = {
     clave: sancion.valor || "",
@@ -437,7 +331,10 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
 }
 
 function transformarServidorPublico(entrada, tipoSalida) {
-  const resultadoFalta = obtenerClaveFalta(entrada.tipoFalta);
+  const resultadoFalta =
+    tipoSalida === "no_graves"
+      ? obtenerClaveFaltaNoGrave(entrada.tipoFalta)
+      : obtenerClaveFalta(entrada.tipoFalta);
 
   const esquemaBase = {
     fecha: entrada.fechaCaptura || "",
@@ -513,7 +410,6 @@ function transformarServidorPublico(entrada, tipoSalida) {
     };
   } else {
     // no_graves
-    const resultadoFalta = obtenerClaveFaltaNoGrave(entrada.tipoFalta);
     return {
       ...esquemaBase,
       faltaCometida: [faltaCometidaBase],
@@ -529,33 +425,117 @@ function transformarServidorPublico(entrada, tipoSalida) {
         autoridadSubstanciadora: "",
       },
       tipoSancion:
-        entrada.tipoSancion?.map((sancion) => ({
-          clave: sancion.clave || "",
-          amonestacion: {
-            tipo: "",
+        entrada.tipoSancion?.map((sancion) =>
+          construirTipoSancion(sancion, entrada, tipoSalida)
+        ) || [],
+      observaciones: entrada.observaciones || "",
+    };
+  }
+}
+
+function construirTipoSancionParticular(sancion, entrada, tipoPersona) {
+  const tipoSancionBase = {
+    clave: sancion.clave || "",
+  };
+
+  switch (sancion.clave) {
+    case "I": // Inhabilitación
+      return {
+        ...tipoSancionBase,
+        inhabilitacion: {
+          plazoAnios: "",
+          plazoMeses: "",
+          plazoDias: "",
+          fechaInicial: entrada.inhabilitacion?.fechaInicial || "",
+          fechaFinal: entrada.inhabilitacion?.fechaFinal || "",
+        },
+      };
+
+    case "SE": // Sanción Económica
+      return {
+        ...tipoSancionBase,
+        sancionEconomica: {
+          monto: entrada.multa?.monto || "",
+          moneda: entrada.multa?.moneda?.valor || "",
+          plazoPago: {
+            anios: "",
+            meses: "",
+            dias: "",
           },
-          suspension: {
-            plazoMeses: "",
-            plazoDias: "",
-            plazoFechaInicial: "",
-            plazoFechaFinal: "",
+          efectivamenteCobrada: {
+            monto: "",
+            moneda: "",
+            fechaCobro: "",
           },
-          destitucionEmpleo: {
-            fechaDestitucion: "",
+          fechaPagoTotal: "",
+        },
+      };
+
+    case "IN": // Indemnización
+      return {
+        ...tipoSancionBase,
+        indemnizacion: {
+          monto: "",
+          moneda: "",
+          plazoPago: {
+            anios: "",
+            meses: "",
+            dias: "",
           },
-          inhabilitacion: {
-            plazoAnios: "",
-            plazoMeses: "",
-            plazoDias: "",
-            plazoFechaInicial: entrada.inhabilitacion?.fechaInicial || "",
-            plazoFechaFinal: entrada.inhabilitacion?.fechaFinal || "",
+          efectivamenteCobrada: {
+            monto: "",
+            moneda: "",
+            fechaCobro: "",
           },
+          fechaPagoTotal: "",
+        },
+      };
+
+    case "SA": // Suspensión de Actividades (solo para morales)
+      if (tipoPersona === "moral") {
+        return {
+          ...tipoSancionBase,
+          suspensionActividades: {
+            plazoSuspensionAnios: "",
+            plazoSuspensionMeses: "",
+            plazoSuspensionDias: "",
+            fechaInicial: "",
+            fechaFinal: "",
+          },
+        };
+      }
+      break;
+
+    case "DS": // Disolución de Sociedad (solo para morales)
+      if (tipoPersona === "moral") {
+        return {
+          ...tipoSancionBase,
+          disolucionSociedad: {
+            fechaDisolucion: "",
+          },
+        };
+      }
+      break;
+
+    case "O": // Otro
+      if (tipoPersona === "moral") {
+        return {
+          ...tipoSancionBase,
           otro: {
             denominacionSancion: "",
           },
-        })) || [],
-      observaciones: entrada.observaciones || "",
-    };
+        };
+      } else {
+        return {
+          ...tipoSancionBase,
+          otro: "",
+          denominacionSancion: "",
+        };
+      }
+      break;
+
+    default:
+      return tipoSancionBase;
   }
 }
 
