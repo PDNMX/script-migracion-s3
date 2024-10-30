@@ -28,6 +28,36 @@ const faltasNoGraves = [
   "ADMINISTRATIVA NO GRAVE",
 ];
 
+function mapearTipoSancionParticular(clave, tipoPersona) {
+  // Mapeo del catálogo original a los nuevos valores
+  const mapeoFisicas = {
+    I: "INHABILITACION",
+    IND: "INDEMNIZACION",
+    SE: "SANCION_ECONOMICA",
+    M: "SANCION_ECONOMICA",
+    O: "OTRO",
+  };
+
+  const mapeoMorales = {
+    I: "INHABILITACION",
+    IND: "INDEMNIZACION",
+    SE: "SANCION_ECONOMICA",
+    M: "SANCION_ECONOMICA",
+    S: "SUSPENSION_ACTIVIDADES",
+    D: "DISOLUCION_SOCIEDAD",
+    O: "OTRO",
+  };
+
+  // Normalizar la clave de entrada
+  const claveNormalizada = clave.toUpperCase();
+
+  // Seleccionar el mapeo según el tipo de persona
+  const mapeo = tipoPersona === "fisica" ? mapeoFisicas : mapeoMorales;
+
+  // Retornar el valor mapeado o OTRO si no hay coincidencia
+  return mapeo[claveNormalizada] || "OTRO";
+}
+
 function mapearTipoSancion(clave, tipoEsquema) {
   // Mapeo del catálogo original a los nuevos valores
   const mapeoGraves = {
@@ -449,113 +479,99 @@ function transformarServidorPublico(entrada, tipoSalida) {
 }
 
 function construirTipoSancionParticular(sancion, entrada, tipoPersona) {
-  const tipoSancionBase = {
-    clave: sancion.clave || "",
+  const claveMapeada = mapearTipoSancionParticular(
+    sancion.clave || "",
+    tipoPersona
+  );
+
+  const sancionBase = {
+    clave: claveMapeada,
   };
 
-  switch (sancion.clave) {
-    case "I": // Inhabilitación
-      return {
-        ...tipoSancionBase,
-        inhabilitacion: {
-          plazoAnios: "",
-          plazoMeses: "",
-          plazoDias: "",
-          fechaInicial: entrada.inhabilitacion?.fechaInicial || "",
-          fechaFinal: entrada.inhabilitacion?.fechaFinal || "",
-        },
+  // Construir objeto según tipo de sanción
+  switch (claveMapeada) {
+    case "INHABILITACION":
+      sancionBase.inhabilitacion = {
+        plazoAnios: "",
+        plazoMeses: "",
+        plazoDias: "",
+        fechaInicial: entrada.inhabilitacion?.fechaInicial || "",
+        fechaFinal: entrada.inhabilitacion?.fechaFinal || "",
       };
+      break;
 
-    case "SE": // Sanción Económica
-      return {
-        ...tipoSancionBase,
-        sancionEconomica: {
-          monto: entrada.multa?.monto || "",
-          moneda: entrada.multa?.moneda?.valor || "",
-          plazoPago: {
-            anios: "",
-            meses: "",
-            dias: "",
-          },
-          efectivamenteCobrada: {
-            monto: "",
-            moneda: "",
-            fechaCobro: "",
-          },
-          fechaPagoTotal: "",
+    case "INDEMNIZACION":
+      sancionBase.indemnizacion = {
+        monto: "",
+        moneda: "",
+        plazoPago: {
+          anios: "",
+          meses: "",
+          dias: "",
         },
-      };
-
-    case "IN": // Indemnización
-      return {
-        ...tipoSancionBase,
-        indemnizacion: {
+        efectivamenteCobrada: {
           monto: "",
           moneda: "",
-          plazoPago: {
-            anios: "",
-            meses: "",
-            dias: "",
-          },
-          efectivamenteCobrada: {
-            monto: "",
-            moneda: "",
-            fechaCobro: "",
-          },
-          fechaPagoTotal: "",
+          fechaCobro: "",
         },
+        fechaPagoTotal: "",
       };
-
-    case "SA": // Suspensión de Actividades (solo para morales)
-      if (tipoPersona === "moral") {
-        return {
-          ...tipoSancionBase,
-          suspensionActividades: {
-            plazoSuspensionAnios: "",
-            plazoSuspensionMeses: "",
-            plazoSuspensionDias: "",
-            fechaInicial: "",
-            fechaFinal: "",
-          },
-        };
-      }
       break;
 
-    case "DS": // Disolución de Sociedad (solo para morales)
-      if (tipoPersona === "moral") {
-        return {
-          ...tipoSancionBase,
-          disolucionSociedad: {
-            fechaDisolucion: "",
-          },
-        };
-      }
+    case "SANCION_ECONOMICA":
+      sancionBase.sancionEconomica = {
+        monto: entrada.multa?.monto || "",
+        moneda: entrada.multa?.moneda?.valor || "",
+        plazoPago: {
+          anios: "",
+          meses: "",
+          dias: "",
+        },
+        efectivamenteCobrada: {
+          monto: "",
+          moneda: "",
+          fechaCobro: "",
+        },
+        fechaPagoTotal: "",
+      };
       break;
-
-    case "O": // Otro
-      if (tipoPersona === "moral") {
-        return {
-          ...tipoSancionBase,
-          otro: {
-            denominacionSancion: "",
-          },
-        };
-      } else {
-        return {
-          ...tipoSancionBase,
-          otro: "",
-          denominacionSancion: "",
-        };
-      }
-      break;
-
-    default:
-      return tipoSancionBase;
   }
+
+  // Campos específicos para personas morales
+  if (tipoPersona === "moral") {
+    if (claveMapeada === "SUSPENSION_ACTIVIDADES") {
+      sancionBase.suspensionActividades = {
+        plazoSuspensionAnios: "",
+        plazoSuspensionMeses: "",
+        plazoSuspensionDias: "",
+        fechaInicial: "",
+        fechaFinal: "",
+      };
+    }
+
+    if (claveMapeada === "DISOLUCION_SOCIEDAD") {
+      sancionBase.disolucionSociedad = {
+        fechaDisolucion: "",
+      };
+    }
+
+    if (claveMapeada === "OTRO") {
+      sancionBase.otro = {
+        denominacionSancion: sancion.valor || "",
+      };
+    }
+  } else {
+    // Para personas físicas, el campo otro es diferente
+    if (claveMapeada === "OTRO") {
+      sancionBase.otro = "";
+      sancionBase.denominacionSancion = sancion.valor || "";
+    }
+  }
+
+  return sancionBase;
 }
 
 function transformarParticular(entrada, tipoPersona) {
-  // Esquema base común
   const esquemaBase = {
     fecha: entrada.fechaCaptura || "",
     expediente: entrada.expediente || "",
@@ -570,7 +586,25 @@ function transformarParticular(entrada, tipoPersona) {
       clave: "",
       valor: "",
     },
-    faltaCometida: [
+    faltaCometida: entrada.faltaCometida?.map((falta) => ({
+      clave: falta.clave || "",
+      valor: falta.valor || "",
+      normatividadInfringida: falta.normatividadInfringida?.map(
+        (normatividad) => ({
+          nombreNormatividad: normatividad.nombreNormatividad || "",
+          articulo: normatividad.articulo || "",
+          fraccion: normatividad.fraccion || "",
+        })
+      ) || [
+        {
+          nombreNormatividad: "",
+          articulo: "",
+          fraccion: "",
+        },
+      ],
+      descripcionHechos:
+        falta.descripcionHechos || entrada.causaMotivoHechos || "",
+    })) || [
       {
         clave: "",
         valor: "",
@@ -586,7 +620,7 @@ function transformarParticular(entrada, tipoPersona) {
     ],
     resolucion: {
       tituloResolucion: entrada.resolucion?.sentido || "",
-      fechaResolucion: "",
+      fechaResolucion: entrada.resolucion?.fechaResolucion || "",
       fechaNotificacion: entrada.resolucion?.fechaNotificacion || "",
       urlResolucion: entrada.resolucion?.url || "",
       fechaResolucionFirme: "",
@@ -602,7 +636,7 @@ function transformarParticular(entrada, tipoPersona) {
   };
 
   if (tipoPersona === "fisica") {
-    // Extraer nombres y apellidos del nombreRazonSocial
+    // Dividir nombreRazonSocial en componentes para persona física
     const nombreCompleto =
       entrada.particularSancionado?.nombreRazonSocial || "";
     const partes = nombreCompleto.split(" ");
@@ -662,50 +696,12 @@ function transformarParticular(entrada, tipoPersona) {
         },
       },
       tipoSancion:
-        entrada.tipoSancion?.map((sancion) => ({
-          clave: sancion.clave || "",
-          inhabilitacion: {
-            plazoAnios: "",
-            plazoMeses: "",
-            plazoDias: "",
-            fechaInicial: entrada.inhabilitacion?.fechaInicial || "",
-            fechaFinal: entrada.inhabilitacion?.fechaFinal || "",
-          },
-          indemnizacion: {
-            monto: "",
-            moneda: "",
-            plazoPago: {
-              anios: "",
-              meses: "",
-              dias: "",
-            },
-            efectivamenteCobrada: {
-              monto: "",
-              moneda: "",
-              fechaCobro: "",
-            },
-            fechaPagoTotal: "",
-          },
-          sancionEconomica: {
-            monto: entrada.multa?.monto || "",
-            moneda: entrada.multa?.moneda?.valor || "",
-            plazoPago: {
-              anios: "",
-              meses: "",
-              dias: "",
-            },
-            efectivamenteCobrada: {
-              monto: "",
-              moneda: "",
-              fechaCobro: "",
-            },
-          },
-          otro: "",
-          denominacionSancion: "",
-        })) || [],
+        entrada.tipoSancion?.map((sancion) =>
+          construirTipoSancionParticular(sancion, entrada, "fisica")
+        ) || [],
     };
   } else {
-    // moral
+    // Persona moral
     return {
       ...esquemaBase,
       datosGenerales: {
@@ -773,15 +769,12 @@ function transformarParticular(entrada, tipoPersona) {
         },
       },
       tipoSancion:
-        entrada.tipoSancion
-          ?.map((sancion) =>
-            construirTipoSancionParticular(sancion, entrada, tipoPersona)
-          )
-          .filter(Boolean) || [],
+        entrada.tipoSancion?.map((sancion) =>
+          construirTipoSancionParticular(sancion, entrada, "moral")
+        ) || [],
     };
   }
 }
-
 async function crearDirectorioSiNoExiste(dir) {
   try {
     await fs.access(dir);
