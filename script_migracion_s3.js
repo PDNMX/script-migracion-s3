@@ -4,7 +4,7 @@ const path = require("path");
 // Define input and output paths
 const inputDir = "../pruebas/datos_entrada/";
 const outputDir = "../pruebas/datos_salida/";
-
+const entidadFederativaDefault = "01";
 // Definición de tipos de faltas
 const faltasGraves = [
   "COHECHO O EXTORSION",
@@ -28,49 +28,16 @@ const faltasNoGraves = [
   "ADMINISTRATIVA NO GRAVE",
 ];
 
-function obtenerClaveFaltaCometida(tipoFalta) {
-  // Si es un string "Dato no proporcionado" o está vacío
-  if (!tipoFalta) {
-    return {
-      clave: "OTRO",
-      valorOriginal: "",
-    };
+function mapearGenero(genero) {
+  const valor = genero?.valor?.toUpperCase() || "";
+  switch (valor) {
+    case "MASCULINO":
+      return "HOMBRE";
+    case "FEMENINO":
+      return "MUJER";
+    default:
+      return valor;
   }
-
-  // Obtener el texto a analizar
-  const textoFalta =
-    typeof tipoFalta === "object"
-      ? (tipoFalta.valor || tipoFalta.descripcion || "").toUpperCase()
-      : tipoFalta.toUpperCase();
-
-  // Definir mapeo de palabras clave
-  const mapeoFaltas = [
-    { buscar: ["SOBORNO"], clave: "SOBORNO" },
-    { buscar: ["PARTICIPACION ILICITA"], clave: "PARTICIPACION_ILICITA" },
-    { buscar: ["TRAFICO DE INFLUENCIAS"], clave: "TRAFICO_INFLUENCIAS" },
-    {
-      buscar: ["INFORMACION FALSA", "DOCUMENTACION FALSA"],
-      clave: "UTILIZACION_INFORMACION_FALSA",
-    },
-    { buscar: ["COLUSION"], clave: "COLUSION" },
-    { buscar: ["OBSTRUCCION"], clave: "OBSTRUCCION_FACULTADES" },
-    { buscar: ["CONTRATACION INDEBIDA"], clave: "CONTRATACION_INDEBIDA" },
-    {
-      buscar: ["USO INDEBIDO DE RECURSOS", "RECURSOS PUBLICOS"],
-      clave: "USO_INDEBIDO_RECURSOS_PUBLICOS",
-    },
-  ];
-
-  // Buscar coincidencia
-  const coincidencia = mapeoFaltas.find((item) =>
-    item.buscar.some((palabra) => textoFalta.includes(palabra))
-  );
-
-  return {
-    clave: coincidencia ? coincidencia.clave : "OTRO",
-    valorOriginal:
-      typeof tipoFalta === "object" ? tipoFalta.valor || "" : tipoFalta,
-  };
 }
 
 function mapearTipoSancionParticular(clave, tipoPersona) {
@@ -129,58 +96,6 @@ function mapearClaveFaltaParticular(claveOriginal, tipoPersona) {
 
   // Retornar el valor mapeado o OTRO si no hay coincidencia
   return mapeo[claveNormalizada] || "OTRO";
-}
-
-function mapearFaltaCometidaParticular(tipoFalta) {
-  // Si es un string "Dato no proporcionado" o está vacío
-  if (!tipoFalta || tipoFalta === "Dato no proporcionado") {
-    return {
-      clave: "OTRO",
-      valorOriginal: tipoFalta || "",
-    };
-  }
-
-  // Normalizar el texto para búsqueda
-  const textoFalta =
-    typeof tipoFalta === "object"
-      ? (tipoFalta.descripcion || tipoFalta.valor || "").toUpperCase()
-      : tipoFalta.toUpperCase();
-
-  // Mapeo de palabras clave a tipos de falta
-  const mapeoFaltas = [
-    { buscar: "SOBORNO", clave: "SOBORNO" },
-    { buscar: "PARTICIPACION ILICITA", clave: "PARTICIPACION_ILICITA" },
-    { buscar: "TRAFICO DE INFLUENCIAS", clave: "TRAFICO_INFLUENCIAS" },
-    { buscar: "INFORMACION FALSA", clave: "UTILIZACION_INFORMACION_FALSA" },
-    { buscar: "COLUSION", clave: "COLUSION" },
-    { buscar: "OBSTRUCCION", clave: "OBSTRUCCION_FACULTADES" },
-    { buscar: "CONTRATACION INDEBIDA", clave: "CONTRATACION_INDEBIDA" },
-    {
-      buscar: "USO INDEBIDO DE RECURSOS",
-      clave: "USO_INDEBIDO_RECURSOS_PUBLICOS",
-    },
-    { buscar: "RECURSOS PUBLICOS", clave: "USO_INDEBIDO_RECURSOS_PUBLICOS" },
-  ];
-
-  // Buscar coincidencia
-  const coincidencia = mapeoFaltas.find((item) =>
-    textoFalta.includes(item.buscar)
-  );
-
-  if (coincidencia) {
-    return {
-      clave: coincidencia.clave,
-      valorOriginal:
-        typeof tipoFalta === "object" ? tipoFalta.valor || "" : tipoFalta,
-    };
-  }
-
-  // Si no hay coincidencia
-  return {
-    clave: "OTRO",
-    valorOriginal:
-      typeof tipoFalta === "object" ? tipoFalta.valor || "" : tipoFalta,
-  };
 }
 
 function mapearTipoSancion(clave, tipoEsquema) {
@@ -515,16 +430,18 @@ function transformarServidorPublico(entrada, tipoSalida) {
       segundoApellido: entrada.servidorPublicoSancionado?.segundoApellido || "",
       curp: entrada.servidorPublicoSancionado?.curp || "",
       rfc: entrada.servidorPublicoSancionado?.rfc || "",
-      sexo: entrada.servidorPublicoSancionado?.genero?.valor || "",
+      sexo: mapearGenero(entrada.servidorPublicoSancionado?.genero),
     },
     empleoCargoComision: {
-      entidadFederativa: "",
+      entidadFederativa:
+        entrada.domicilioMexico?.entidadFederativa.clave ||
+        entidadFederativaDefault,
       nivelOrdenGobierno: "",
       ambitoPublico: "",
       nombreEntePublico: entrada.institucionDependencia?.nombre || "",
       siglasEntePublico: entrada.institucionDependencia?.siglas || "",
       nivelJerarquico: {
-        clave: "otro",
+        clave: "OTRO",
         valor: entrada.servidorPublicoSancionado?.puesto || "",
       },
       denominacion: "",
@@ -725,7 +642,8 @@ function transformarParticular(entrada, tipoPersona) {
         coloniaLocalidad: domicilio?.localidad?.valor || "",
         municipioAlcaldia: domicilio?.municipio || "",
         codigoPostal: domicilio?.codigoPostal || "",
-        entidadFederativa: domicilio?.entidadFederativa || "",
+        entidadFederativa:
+          domicilio?.entidadFederativa.clave || entidadFederativaDefault,
       };
     }
     return {
@@ -813,22 +731,12 @@ function transformarParticular(entrada, tipoPersona) {
     },
   };
 }
+
 async function crearDirectorioSiNoExiste(dir) {
   try {
     await fs.access(dir);
   } catch {
     await fs.mkdir(dir, { recursive: true });
-  }
-}
-
-async function escribirArchivo(directorio, nombreArchivo, contenido) {
-  try {
-    await crearDirectorioSiNoExiste(directorio);
-    const rutaCompleta = path.join(directorio, nombreArchivo);
-    await fs.writeFile(rutaCompleta, JSON.stringify(contenido, null, 2));
-    console.log(`Archivo escrito exitosamente: ${rutaCompleta}`);
-  } catch (error) {
-    console.error(`Error escribiendo archivo ${nombreArchivo}:`, error);
   }
 }
 
