@@ -35,9 +35,14 @@ Antes de ejecutar el script, es necesario configurar las siguientes variables en
 // Rutas de directorios
 const inputDir = "../pruebas/datos_entrada/";  // Directorio donde se encuentran los archivos JSON a procesar
 const outputDir = "../pruebas/datos_salida/";  // Directorio donde se guardarán los archivos procesados
+
+// Configuración de entidad federativa
+const entidadFederativaDefault = "01";  // Código de la entidad federativa (ajustar según corresponda)
 ```
 
-Asegúrese de ajustar estas rutas según la estructura de directorios de su proyecto.
+Asegúrese de ajustar estas variables según sus necesidades:
+- Las rutas de directorios deben corresponder a la estructura de su proyecto
+- El código de entidad federativa debe corresponder al estado o entidad que está procesando
 
 ## Uso
 1. Clone el repositorio:
@@ -45,7 +50,7 @@ Asegúrese de ajustar estas rutas según la estructura de directorios de su proy
    git clone [URL del repositorio]
    ```
 
-2. Configure las rutas de los directorios como se mencionó anteriormente.
+2. Configure las variables mencionadas en la sección anterior.
 
 3. Coloque los archivos JSON a procesar en el directorio de entrada configurado.
 
@@ -72,3 +77,5 @@ Los archivos procesados se organizarán en la siguiente estructura:
 - El script creará automáticamente los directorios necesarios si no existen
 - Se manejan errores de procesamiento por archivo, permitiendo que el script continúe con los demás archivos en caso de error
 
+## Licencia
+GNU General Public License v3.0 (GPLv3)
