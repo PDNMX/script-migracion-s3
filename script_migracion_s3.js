@@ -28,6 +28,51 @@ const faltasNoGraves = [
   "ADMINISTRATIVA NO GRAVE",
 ];
 
+function obtenerClaveFaltaCometida(tipoFalta) {
+  // Si es un string "Dato no proporcionado" o está vacío
+  if (!tipoFalta) {
+    return {
+      clave: "OTRO",
+      valorOriginal: "",
+    };
+  }
+
+  // Obtener el texto a analizar
+  const textoFalta =
+    typeof tipoFalta === "object"
+      ? (tipoFalta.valor || tipoFalta.descripcion || "").toUpperCase()
+      : tipoFalta.toUpperCase();
+
+  // Definir mapeo de palabras clave
+  const mapeoFaltas = [
+    { buscar: ["SOBORNO"], clave: "SOBORNO" },
+    { buscar: ["PARTICIPACION ILICITA"], clave: "PARTICIPACION_ILICITA" },
+    { buscar: ["TRAFICO DE INFLUENCIAS"], clave: "TRAFICO_INFLUENCIAS" },
+    {
+      buscar: ["INFORMACION FALSA", "DOCUMENTACION FALSA"],
+      clave: "UTILIZACION_INFORMACION_FALSA",
+    },
+    { buscar: ["COLUSION"], clave: "COLUSION" },
+    { buscar: ["OBSTRUCCION"], clave: "OBSTRUCCION_FACULTADES" },
+    { buscar: ["CONTRATACION INDEBIDA"], clave: "CONTRATACION_INDEBIDA" },
+    {
+      buscar: ["USO INDEBIDO DE RECURSOS", "RECURSOS PUBLICOS"],
+      clave: "USO_INDEBIDO_RECURSOS_PUBLICOS",
+    },
+  ];
+
+  // Buscar coincidencia
+  const coincidencia = mapeoFaltas.find((item) =>
+    item.buscar.some((palabra) => textoFalta.includes(palabra))
+  );
+
+  return {
+    clave: coincidencia ? coincidencia.clave : "OTRO",
+    valorOriginal:
+      typeof tipoFalta === "object" ? tipoFalta.valor || "" : tipoFalta,
+  };
+}
+
 function mapearTipoSancionParticular(clave, tipoPersona) {
   // Mapeo del catálogo original a los nuevos valores
   const mapeoFisicas = {
@@ -56,6 +101,86 @@ function mapearTipoSancionParticular(clave, tipoPersona) {
 
   // Retornar el valor mapeado o OTRO si no hay coincidencia
   return mapeo[claveNormalizada] || "OTRO";
+}
+
+function mapearClaveFaltaParticular(claveOriginal, tipoPersona) {
+  // Mapeo del catálogo original a los nuevos valores
+  const mapeoFisicas = {
+    I: "INHABILITACION",
+    M: "SANCION_ECONOMICA",
+    SE: "SANCION_ECONOMICA",
+    IND: "INDEMNIZACION",
+  };
+
+  const mapeoMorales = {
+    I: "INHABILITACION",
+    M: "SANCION_ECONOMICA",
+    SE: "SANCION_ECONOMICA",
+    IND: "INDEMNIZACION",
+    S: "SUSPENSION_ACTIVIDADES",
+    D: "DISOLUCION_SOCIEDAD",
+  };
+
+  // Normalizar la clave de entrada
+  const claveNormalizada = claveOriginal?.toUpperCase() || "";
+
+  // Seleccionar el mapeo según el tipo de persona
+  const mapeo = tipoPersona === "fisica" ? mapeoFisicas : mapeoMorales;
+
+  // Retornar el valor mapeado o OTRO si no hay coincidencia
+  return mapeo[claveNormalizada] || "OTRO";
+}
+
+function mapearFaltaCometidaParticular(tipoFalta) {
+  // Si es un string "Dato no proporcionado" o está vacío
+  if (!tipoFalta || tipoFalta === "Dato no proporcionado") {
+    return {
+      clave: "OTRO",
+      valorOriginal: tipoFalta || "",
+    };
+  }
+
+  // Normalizar el texto para búsqueda
+  const textoFalta =
+    typeof tipoFalta === "object"
+      ? (tipoFalta.descripcion || tipoFalta.valor || "").toUpperCase()
+      : tipoFalta.toUpperCase();
+
+  // Mapeo de palabras clave a tipos de falta
+  const mapeoFaltas = [
+    { buscar: "SOBORNO", clave: "SOBORNO" },
+    { buscar: "PARTICIPACION ILICITA", clave: "PARTICIPACION_ILICITA" },
+    { buscar: "TRAFICO DE INFLUENCIAS", clave: "TRAFICO_INFLUENCIAS" },
+    { buscar: "INFORMACION FALSA", clave: "UTILIZACION_INFORMACION_FALSA" },
+    { buscar: "COLUSION", clave: "COLUSION" },
+    { buscar: "OBSTRUCCION", clave: "OBSTRUCCION_FACULTADES" },
+    { buscar: "CONTRATACION INDEBIDA", clave: "CONTRATACION_INDEBIDA" },
+    {
+      buscar: "USO INDEBIDO DE RECURSOS",
+      clave: "USO_INDEBIDO_RECURSOS_PUBLICOS",
+    },
+    { buscar: "RECURSOS PUBLICOS", clave: "USO_INDEBIDO_RECURSOS_PUBLICOS" },
+  ];
+
+  // Buscar coincidencia
+  const coincidencia = mapeoFaltas.find((item) =>
+    textoFalta.includes(item.buscar)
+  );
+
+  if (coincidencia) {
+    return {
+      clave: coincidencia.clave,
+      valorOriginal:
+        typeof tipoFalta === "object" ? tipoFalta.valor || "" : tipoFalta,
+    };
+  }
+
+  // Si no hay coincidencia
+  return {
+    clave: "OTRO",
+    valorOriginal:
+      typeof tipoFalta === "object" ? tipoFalta.valor || "" : tipoFalta,
+  };
 }
 
 function mapearTipoSancion(clave, tipoEsquema) {
@@ -572,80 +697,68 @@ function construirTipoSancionParticular(sancion, entrada, tipoPersona) {
 }
 
 function transformarParticular(entrada, tipoPersona) {
-  const esquemaBase = {
-    fecha: entrada.fechaCaptura || "",
-    expediente: entrada.expediente || "",
-    dondeCometioLaFalta: {
-      entidadFederativa: "",
-      nivelOrdenGobierno: "",
-      ambitoPublico: "",
-      nombreEntePublico: entrada.institucionDependencia?.nombre || "",
-      siglasEntePublico: entrada.institucionDependencia?.siglas || "",
-    },
-    origenProcedimiento: {
-      clave: "",
-      valor: "",
-    },
-    faltaCometida: entrada.faltaCometida?.map((falta) => ({
-      clave: falta.clave || "",
-      valor: falta.valor || "",
-      normatividadInfringida: falta.normatividadInfringida?.map(
-        (normatividad) => ({
-          nombreNormatividad: normatividad.nombreNormatividad || "",
-          articulo: normatividad.articulo || "",
-          fraccion: normatividad.fraccion || "",
-        })
-      ) || [
-        {
-          nombreNormatividad: "",
-          articulo: "",
-          fraccion: "",
-        },
-      ],
-      descripcionHechos:
-        falta.descripcionHechos || entrada.causaMotivoHechos || "",
-    })) || [
+  // Función auxiliar para procesar tipoFalta
+  const procesarTipoFalta = (falta) => ({
+    clave:
+      typeof falta === "object"
+        ? mapearClaveFaltaParticular(falta.clave, tipoPersona)
+        : mapearClaveFaltaParticular(falta, tipoPersona),
+    valor: typeof falta === "object" ? falta.valor || "" : falta || "",
+    normatividadInfringida: [
       {
-        clave: "",
-        valor: "",
-        normatividadInfringida: [
-          {
-            nombreNormatividad: "",
-            articulo: "",
-            fraccion: "",
-          },
-        ],
-        descripcionHechos: entrada.causaMotivoHechos || "",
+        nombreNormatividad: "",
+        articulo: "",
+        fraccion: "",
       },
     ],
-    resolucion: {
-      tituloResolucion: entrada.resolucion?.sentido || "",
-      fechaResolucion: entrada.resolucion?.fechaResolucion || "",
-      fechaNotificacion: entrada.resolucion?.fechaNotificacion || "",
-      urlResolucion: entrada.resolucion?.url || "",
-      fechaResolucionFirme: "",
-      fechaNotificacionFirme: "",
-      urlResolucionFirme: "",
-      fechaEjecucion: "",
-      ordenJurisdiccional: "",
-      autoridadResolutora: entrada.autoridadSancionadora || "",
-      autoridadInvestigadora: "",
-      autoridadSubstanciadora: "",
-    },
-    observaciones: entrada.observaciones || "",
+    descripcionHechos: entrada.causaMotivoHechos || "",
+  });
+
+  // Función auxiliar para procesar domicilio
+  const procesarDomicilio = (domicilio, tipo) => {
+    if (tipo === "mexico") {
+      return {
+        tipoVialidad: "",
+        nombreVialidad: domicilio?.vialidad?.valor || "",
+        numeroExterior: domicilio?.numeroExterior || "",
+        numeroInterior: domicilio?.numeroInterior || "",
+        coloniaLocalidad: domicilio?.localidad?.valor || "",
+        municipioAlcaldia: domicilio?.municipio || "",
+        codigoPostal: domicilio?.codigoPostal || "",
+        entidadFederativa: domicilio?.entidadFederativa || "",
+      };
+    }
+    return {
+      ciudad: domicilio?.ciudadLocalidad || "",
+      provincia: domicilio?.estadoProvincia || "",
+      calle: domicilio?.calle || "",
+      numeroExterior: domicilio?.numeroExterior || "",
+      numeroInterior: domicilio?.numeroInterior || "",
+      codigoPostal: domicilio?.codigoPostal || "",
+      pais: domicilio?.pais?.valor || "",
+    };
+  };
+
+  const datosBase = {
+    faltaCometida: [procesarTipoFalta(entrada.tipoFalta)],
+    tipoSancion:
+      entrada.tipoSancion?.map((sancion) =>
+        construirTipoSancionParticular(sancion, entrada, tipoPersona)
+      ) || [],
   };
 
   if (tipoPersona === "fisica") {
-    // Dividir nombreRazonSocial en componentes para persona física
     const nombreCompleto =
       entrada.particularSancionado?.nombreRazonSocial || "";
-    const partes = nombreCompleto.split(" ");
-    const segundoApellido = partes.pop() || "";
-    const primerApellido = partes.pop() || "";
-    const nombres = partes.join(" ");
+    const partes = nombreCompleto.split(" ").filter(Boolean);
+
+    // Asegurarse de que haya suficientes partes para nombres y apellidos
+    const nombres = partes.length > 2 ? partes.slice(0, -2).join(" ") : "";
+    const primerApellido = partes.length > 1 ? partes[partes.length - 2] : "";
+    const segundoApellido = partes.length > 0 ? partes[partes.length - 1] : "";
 
     return {
-      ...esquemaBase,
+      ...datosBase,
       datosGenerales: {
         nombres,
         primerApellido,
@@ -653,127 +766,52 @@ function transformarParticular(entrada, tipoPersona) {
         curp: "",
         rfc: entrada.particularSancionado?.rfc || "",
         tipoDomicilio: "",
-        domicilioMexico: {
-          tipoVialidad: "",
-          nombreVialidad:
-            entrada.particularSancionado?.domicilioMexico?.vialidad?.valor ||
-            "",
-          numeroExterior:
-            entrada.particularSancionado?.domicilioMexico?.numeroExterior || "",
-          numeroInterior:
-            entrada.particularSancionado?.domicilioMexico?.numeroInterior || "",
-          coloniaLocalidad:
-            entrada.particularSancionado?.domicilioMexico?.localidad?.valor ||
-            "",
-          municipioAlcaldia:
-            entrada.particularSancionado?.domicilioMexico?.municipio || "",
-          codigoPostal:
-            entrada.particularSancionado?.domicilioMexico?.codigoPostal || "",
-          entidadFederativa:
-            entrada.particularSancionado?.domicilioMexico?.entidadFederativa ||
-            "",
-        },
-        domicilioExtranjero: {
-          ciudad:
-            entrada.particularSancionado?.domicilioExtranjero
-              ?.ciudadLocalidad || "",
-          provincia:
-            entrada.particularSancionado?.domicilioExtranjero
-              ?.estadoProvincia || "",
-          calle: entrada.particularSancionado?.domicilioExtranjero?.calle || "",
-          numeroExterior:
-            entrada.particularSancionado?.domicilioExtranjero?.numeroExterior ||
-            "",
-          numeroInterior:
-            entrada.particularSancionado?.domicilioExtranjero?.numeroInterior ||
-            "",
-          codigoPostal:
-            entrada.particularSancionado?.domicilioExtranjero?.codigoPostal ||
-            "",
-          pais:
-            entrada.particularSancionado?.domicilioExtranjero?.pais?.valor ||
-            "",
-        },
+        domicilioMexico: procesarDomicilio(
+          entrada.particularSancionado?.domicilioMexico,
+          "mexico"
+        ),
+        domicilioExtranjero: procesarDomicilio(
+          entrada.particularSancionado?.domicilioExtranjero,
+          "extranjero"
+        ),
       },
-      tipoSancion:
-        entrada.tipoSancion?.map((sancion) =>
-          construirTipoSancionParticular(sancion, entrada, "fisica")
-        ) || [],
-    };
-  } else {
-    // Persona moral
-    return {
-      ...esquemaBase,
-      datosGenerales: {
-        nombreRazonSocial:
-          entrada.particularSancionado?.nombreRazonSocial || "",
-        rfc: entrada.particularSancionado?.rfc || "",
-        objetoSocial: entrada.particularSancionado?.objetoSocial || "",
-        tipoDomicilio: "",
-        domicilioMexico: {
-          tipoVialidad: "",
-          nombreVialidad:
-            entrada.particularSancionado?.domicilioMexico?.vialidad?.valor ||
-            "",
-          numeroExterior:
-            entrada.particularSancionado?.domicilioMexico?.numeroExterior || "",
-          numeroInterior:
-            entrada.particularSancionado?.domicilioMexico?.numeroInterior || "",
-          coloniaLocalidad:
-            entrada.particularSancionado?.domicilioMexico?.localidad?.valor ||
-            "",
-          municipioAlcaldia:
-            entrada.particularSancionado?.domicilioMexico?.municipio || "",
-          codigoPostal:
-            entrada.particularSancionado?.domicilioMexico?.codigoPostal || "",
-          entidadFederativa:
-            entrada.particularSancionado?.domicilioMexico?.entidadFederativa ||
-            "",
-        },
-        domicilioExtranjero: {
-          ciudad:
-            entrada.particularSancionado?.domicilioExtranjero
-              ?.ciudadLocalidad || "",
-          provincia:
-            entrada.particularSancionado?.domicilioExtranjero
-              ?.estadoProvincia || "",
-          calle: entrada.particularSancionado?.domicilioExtranjero?.calle || "",
-          numeroExterior:
-            entrada.particularSancionado?.domicilioExtranjero?.numeroExterior ||
-            "",
-          numeroInterior:
-            entrada.particularSancionado?.domicilioExtranjero?.numeroInterior ||
-            "",
-          codigoPostal:
-            entrada.particularSancionado?.domicilioExtranjero?.codigoPostal ||
-            "",
-          pais:
-            entrada.particularSancionado?.domicilioExtranjero?.pais?.valor ||
-            "",
-        },
-      },
-      datosDirGeneralReprLegal: {
-        directorGeneral: {
-          nombres: entrada.directorGeneral?.nombres || "",
-          primerApellido: entrada.directorGeneral?.primerApellido || "",
-          segundoApellido: entrada.directorGeneral?.segundoApellido || "",
-          rfc: "",
-          curp: entrada.directorGeneral?.curp || "",
-        },
-        representanteLegal: {
-          nombres: entrada.apoderadoLegal?.nombres || "",
-          primerApellido: entrada.apoderadoLegal?.primerApellido || "",
-          segundoApellido: entrada.apoderadoLegal?.segundoApellido || "",
-          rfc: "",
-          curp: entrada.apoderadoLegal?.curp || "",
-        },
-      },
-      tipoSancion:
-        entrada.tipoSancion?.map((sancion) =>
-          construirTipoSancionParticular(sancion, entrada, "moral")
-        ) || [],
     };
   }
+
+  // Persona moral
+  return {
+    ...datosBase,
+    datosGenerales: {
+      nombreRazonSocial: entrada.particularSancionado?.nombreRazonSocial || "",
+      rfc: entrada.particularSancionado?.rfc || "",
+      objetoSocial: entrada.particularSancionado?.objetoSocial || "",
+      tipoDomicilio: "",
+      domicilioMexico: procesarDomicilio(
+        entrada.particularSancionado?.domicilioMexico,
+        "mexico"
+      ),
+      domicilioExtranjero: procesarDomicilio(
+        entrada.particularSancionado?.domicilioExtranjero,
+        "extranjero"
+      ),
+    },
+    datosDirGeneralReprLegal: {
+      directorGeneral: {
+        nombres: entrada.directorGeneral?.nombres || "",
+        primerApellido: entrada.directorGeneral?.primerApellido || "",
+        segundoApellido: entrada.directorGeneral?.segundoApellido || "",
+        rfc: "",
+        curp: entrada.directorGeneral?.curp || "",
+      },
+      representanteLegal: {
+        nombres: entrada.apoderadoLegal?.nombres || "",
+        primerApellido: entrada.apoderadoLegal?.primerApellido || "",
+        segundoApellido: entrada.apoderadoLegal?.segundoApellido || "",
+        rfc: "",
+        curp: entrada.apoderadoLegal?.curp || "",
+      },
+    },
+  };
 }
 async function crearDirectorioSiNoExiste(dir) {
   try {
