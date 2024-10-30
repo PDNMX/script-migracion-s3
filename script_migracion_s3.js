@@ -28,6 +28,51 @@ const faltasNoGraves = [
   "ADMINISTRATIVA NO GRAVE",
 ];
 
+function procesarPlazoInhabilitacion(plazo) {
+  if (!plazo) return { anios: "", meses: "", dias: "" };
+
+  // Convertir a mayúsculas y eliminar paréntesis para uniformidad
+  const plazoNormalizado = plazo.toUpperCase().replace(/[()]/g, "");
+
+  // Caso especial para texto como "TRES MESES"
+  const palabrasNumericas = {
+    UN: 1,
+    UNO: 1,
+    DOS: 2,
+    TRES: 3,
+    CUATRO: 4,
+    CINCO: 5,
+    SEIS: 6,
+    SIETE: 7,
+    OCHO: 8,
+    NUEVE: 9,
+    DIEZ: 10,
+  };
+
+  // Verificar si es un formato textual
+  for (const [palabra, numero] of Object.entries(palabrasNumericas)) {
+    if (plazoNormalizado.includes(palabra)) {
+      if (plazoNormalizado.includes("AÑO"))
+        return { anios: numero.toString(), meses: "0", dias: "0" };
+      if (plazoNormalizado.includes("MES"))
+        return { anios: "0", meses: numero.toString(), dias: "0" };
+      if (plazoNormalizado.includes("DIA"))
+        return { anios: "0", meses: "0", dias: numero.toString() };
+    }
+  }
+
+  // Para formato "0 día(s) 4 mes(es) 4 año(s)"
+  const aniosMatch = plazoNormalizado.match(/(\d+)\s*AÑO/);
+  const mesesMatch = plazoNormalizado.match(/(\d+)\s*MES/);
+  const diasMatch = plazoNormalizado.match(/(\d+)\s*DIA/);
+
+  return {
+    anios: aniosMatch ? aniosMatch[1] : "0",
+    meses: mesesMatch ? mesesMatch[1] : "0",
+    dias: diasMatch ? diasMatch[1] : "0",
+  };
+}
+
 function mapearGenero(genero) {
   const valor = genero?.valor?.toUpperCase() || "";
   switch (valor) {
@@ -312,7 +357,6 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
       ...base,
     };
 
-    // Usar la clave mapeada para determinar la estructura
     switch (claveMapeada) {
       case "SUSPENSION":
         sancionGrave.suspension = {
@@ -330,10 +374,13 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
         break;
 
       case "INHABILITACION":
+        const plazos = procesarPlazoInhabilitacion(
+          entrada.inhabilitacion?.plazo
+        );
         sancionGrave.inhabilitacion = {
-          plazoAnios: "",
-          plazoMeses: "",
-          plazoDias: "",
+          plazoAnios: plazos.anios,
+          plazoMeses: plazos.meses,
+          plazoDias: plazos.dias,
           fechaInicial: entrada.inhabilitacion?.fechaInicial || "",
           fechaFinal: entrada.inhabilitacion?.fechaFinal || "",
         };
@@ -371,7 +418,6 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
       ...base,
     };
 
-    // Usar la clave mapeada para determinar la estructura
     switch (claveMapeada) {
       case "AMONESTACION":
         sancionNoGrave.amonestacion = {
@@ -395,10 +441,13 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
         break;
 
       case "INHABILITACION":
+        const plazos = procesarPlazoInhabilitacion(
+          entrada.inhabilitacion?.plazo
+        );
         sancionNoGrave.inhabilitacion = {
-          plazoAnios: "",
-          plazoMeses: "",
-          plazoDias: "",
+          plazoAnios: plazos.anios,
+          plazoMeses: plazos.meses,
+          plazoDias: plazos.dias,
           plazoFechaInicial: entrada.inhabilitacion?.fechaInicial || "",
           plazoFechaFinal: entrada.inhabilitacion?.fechaFinal || "",
         };
@@ -414,7 +463,6 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
     return sancionNoGrave;
   }
 }
-
 function transformarServidorPublico(entrada, tipoSalida) {
   const resultadoFalta =
     tipoSalida === "no_graves"
