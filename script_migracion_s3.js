@@ -53,11 +53,11 @@ function procesarPlazoInhabilitacion(plazo) {
   for (const [palabra, numero] of Object.entries(palabrasNumericas)) {
     if (plazoNormalizado.includes(palabra)) {
       if (plazoNormalizado.includes("AÑO"))
-        return { anios: numero.toString(), meses: "0", dias: "0" };
+        return { anios: numero.toString(), meses: 0, dias: 0 };
       if (plazoNormalizado.includes("MES"))
-        return { anios: "0", meses: numero.toString(), dias: "0" };
+        return { anios: 0, meses: numero.toString(), dias: 0 };
       if (plazoNormalizado.includes("DIA"))
-        return { anios: "0", meses: "0", dias: numero.toString() };
+        return { anios: 0, meses: 0, dias: numero.toString() };
     }
   }
 
@@ -67,9 +67,9 @@ function procesarPlazoInhabilitacion(plazo) {
   const diasMatch = plazoNormalizado.match(/(\d+)\s*DIA/);
 
   return {
-    anios: aniosMatch ? aniosMatch[1] : "0",
-    meses: mesesMatch ? mesesMatch[1] : "0",
-    dias: diasMatch ? diasMatch[1] : "0",
+    anios: aniosMatch ? aniosMatch[1] : 0,
+    meses: mesesMatch ? mesesMatch[1] : 0,
+    dias: diasMatch ? diasMatch[1] : 0,
   };
 }
 
