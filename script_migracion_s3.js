@@ -563,7 +563,10 @@ function construirTipoSancionParticular(sancion, entrada, tipoPersona) {
     case "SANCION_ECONOMICA":
       sancionBase.sancionEconomica = {
         monto: entrada.multa?.monto || "",
-        moneda: entrada.multa?.moneda?.valor || "",
+        moneda:
+          entrada.multa?.moneda?.valor === "PESO MEXICANO"
+            ? "MXN"
+            : entrada.multa?.moneda?.valor || "",
         plazoPago: {
           anios: "",
           meses: "",
