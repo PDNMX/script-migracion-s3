@@ -33,7 +33,7 @@ function procesarPlazoInhabilitacion(plazo) {
   if (!plazo) return { anios: null, meses: null, dias: null };
 
   // Convertir a mayúsculas y eliminar paréntesis para uniformidad
-  const plazoNormalizado = plazo.toUpperCase().replace(/[()]/g, null);
+  const plazoNormalizado = plazo.toUpperCase().replace(/[()]/g, "");
 
   // Caso especial para texto como "TRES MESES"
   const palabrasNumericas = {
@@ -54,11 +54,11 @@ function procesarPlazoInhabilitacion(plazo) {
   for (const [palabra, numero] of Object.entries(palabrasNumericas)) {
     if (plazoNormalizado.includes(palabra)) {
       if (plazoNormalizado.includes("AÑO"))
-        return { anios: numero.toString(), meses: 0, dias: 0 };
+        return { anios: numero, meses: 0, dias: 0 };
       if (plazoNormalizado.includes("MES"))
-        return { anios: 0, meses: numero.toString(), dias: 0 };
+        return { anios: 0, meses: numero, dias: 0 };
       if (plazoNormalizado.includes("DIA"))
-        return { anios: 0, meses: 0, dias: numero.toString() };
+        return { anios: 0, meses: 0, dias: numero };
     }
   }
 
@@ -68,9 +68,9 @@ function procesarPlazoInhabilitacion(plazo) {
   const diasMatch = plazoNormalizado.match(/(\d+)\s*DIA/);
 
   return {
-    anios: aniosMatch ? aniosMatch[1] : 0,
-    meses: mesesMatch ? mesesMatch[1] : 0,
-    dias: diasMatch ? diasMatch[1] : 0,
+    anios: aniosMatch ? parseInt(aniosMatch[1]) : 0,
+    meses: mesesMatch ? parseInt(mesesMatch[1]) : 0,
+    dias: diasMatch ? parseInt(diasMatch[1]) : 0,
   };
 }
 
@@ -529,7 +529,7 @@ function transformarServidorPublico(entrada, tipoSalida) {
     expediente: entrada.expediente || null,
     datosGenerales: construirDatosGenerales(entrada.servidorPublicoSancionado),
     empleoCargoComision: {
-      entidadFederativa: null,
+      entidadFederativa: entidadFederativaDefault || null,
       nivelOrdenGobierno: null,
       ambitoPublico: null,
       nombreEntePublico: entrada.institucionDependencia?.nombre || null,
