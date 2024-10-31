@@ -360,11 +360,14 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
 
     switch (claveMapeada) {
       case "SUSPENSION":
-        sancionGrave.suspension = {
-          plazoMeses: null,
-          plazoDias: null,
-          fechaInicial: null,
-          fechaFinal: null,
+        const plazo = procesarPlazoInhabilitacion(
+          entrada.inhabilitacion?.plazo
+        );
+        sancionGrave.suspensionEmpleo = {
+          plazoMeses: plazo.meses,
+          plazoDias: plazo.dias,
+          plazoFechaInicial: entrada.inhabilitacion?.fechaInicial || null,
+          plazoFechaFinal: entrada.inhabilitacion?.fechaFinal || null,
         };
         break;
 
@@ -430,11 +433,14 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
         break;
 
       case "SUSPENSION":
-        sancionNoGrave.suspension = {
-          plazoMeses: null,
-          plazoDias: null,
-          plazoFechaInicial: null,
-          plazoFechaFinal: null,
+        const plazo = procesarPlazoInhabilitacion(
+          entrada.inhabilitacion?.plazo
+        );
+        sancionNoGrave.suspensionEmpleo = {
+          plazoMeses: plazo.meses,
+          plazoDias: plazo.dias,
+          plazoFechaInicial: entrada.inhabilitacion?.fechaInicial || null,
+          plazoFechaFinal: entrada.inhabilitacion?.fechaFinal || null,
         };
         break;
 
