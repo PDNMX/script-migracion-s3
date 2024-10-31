@@ -2,9 +2,9 @@ const fs = require("fs").promises;
 const path = require("path");
 
 // Define input and output paths
-const inputDir = "../pruebas/datos_entrada/";
-const outputDir = "../pruebas/datos_salida/";
-const entidadFederativaDefault = "01";
+const inputDir = "./s3s/JALISCO";
+const outputDir = "./pruebas/datos_salida/";
+const entidadFederativaDefault = "15";
 
 // Definición de tipos de faltas
 const faltasGraves = [
@@ -28,6 +28,106 @@ const faltasNoGraves = [
   "INCUMPLIMIENTO EN DECLARACION DE SITUACION PATRIMONIAL",
   "ADMINISTRATIVA NO GRAVE",
 ];
+
+// Función para formatear montos
+function formatearMonto(monto) {
+  if (monto === null || monto === undefined) return null;
+
+  // Si el monto es string, intentar convertirlo a número
+  let montoNumerico;
+
+  if (typeof monto === "string") {
+    // Remover caracteres no numéricos excepto punto y guion
+    const montoLimpio = monto.replace(/[^0-9.-]/g, "");
+    montoNumerico = parseFloat(montoLimpio);
+  } else {
+    montoNumerico = monto;
+  }
+
+  // Si no es un número válido después de la conversión, retornar null
+  if (isNaN(montoNumerico)) return null;
+
+  // Redondear al entero más cercano
+  return Math.round(montoNumerico);
+}
+
+function calcularPlazoSuspension(fechaInicial, fechaFinal) {
+  // Si no hay ambas fechas, retornar nulos
+  if (!fechaInicial || !fechaFinal) {
+    return { meses: null, dias: null };
+  }
+
+  try {
+    // Convertir strings a objetos Date
+    const inicio = new Date(fechaInicial);
+    const fin = new Date(fechaFinal);
+
+    // Verificar si las fechas son válidas
+    if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
+      return { meses: null, dias: null };
+    }
+
+    // Verificar que la fecha final sea posterior a la inicial
+    if (fin < inicio) {
+      return { meses: null, dias: null };
+    }
+
+    // Calcular la diferencia en días total
+    const diffTime = Math.abs(fin - inicio);
+    const totalDias = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    // Calcular meses completos y días restantes
+    const meses = Math.floor(totalDias / 30);
+    const dias = totalDias % 30;
+
+    return {
+      meses: meses || null, // Si es 0, convertir a null
+      dias: dias || null, // Si es 0, convertir a null
+    };
+  } catch (error) {
+    console.error("Error calculando el plazo de suspensión:", error);
+    return { meses: null, dias: null };
+  }
+}
+
+function procesarPlazoSuspension(plazo) {
+  if (!plazo) return { meses: null, dias: null };
+
+  // Convertir a mayúsculas y eliminar paréntesis para uniformidad
+  const plazoNormalizado = plazo.toUpperCase().replace(/[()]/g, "");
+
+  // Caso especial para texto como "TRES MESES"
+  const palabrasNumericas = {
+    UN: 1,
+    UNO: 1,
+    DOS: 2,
+    TRES: 3,
+    CUATRO: 4,
+    CINCO: 5,
+    SEIS: 6,
+    SIETE: 7,
+    OCHO: 8,
+    NUEVE: 9,
+    DIEZ: 10,
+  };
+
+  // Verificar si es un formato textual
+  for (const [palabra, numero] of Object.entries(palabrasNumericas)) {
+    if (plazoNormalizado.includes(palabra)) {
+      if (plazoNormalizado.includes("MES")) return { meses: numero, dias: 0 };
+      if (plazoNormalizado.includes("DIA")) return { meses: 0, dias: numero };
+    }
+  }
+
+  // Para formato "0 día(s) 4 mes(es)"
+  const mesesMatch = plazoNormalizado.match(/(\d+)\s*MES/);
+  const diasMatch = plazoNormalizado.match(/(\d+)\s*DIA/);
+
+  return {
+    meses: mesesMatch ? parseInt(mesesMatch[1]) : 0,
+    dias: diasMatch ? parseInt(diasMatch[1]) : 0,
+  };
+}
 
 function procesarPlazoInhabilitacion(plazo) {
   if (!plazo) return { anios: null, meses: null, dias: null };
@@ -360,14 +460,15 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
 
     switch (claveMapeada) {
       case "SUSPENSION":
-        const plazo = procesarPlazoInhabilitacion(
-          entrada.inhabilitacion?.plazo
+        const plazoSuspension = calcularPlazoSuspension(
+          entrada.inhabilitacion?.fechaInicial,
+          entrada.inhabilitacion?.fechaFinal
         );
         sancionGrave.suspensionEmpleo = {
-          plazoMeses: plazo.meses,
-          plazoDias: plazo.dias,
-          plazoFechaInicial: entrada.inhabilitacion?.fechaInicial || null,
-          plazoFechaFinal: entrada.inhabilitacion?.fechaFinal || null,
+          plazoMeses: plazoSuspension.meses,
+          plazoDias: plazoSuspension.dias,
+          fechaInicial: entrada.inhabilitacion?.fechaInicial || null,
+          fechaFinal: entrada.inhabilitacion?.fechaFinal || null,
         };
         break;
 
@@ -392,7 +493,7 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
 
       case "SANCION_ECONOMICA":
         sancionGrave.sancionEconomica = {
-          monto: entrada.multa?.monto || null,
+          monto: formatearMonto(entrada.multa?.monto),
           moneda:
             entrada.multa?.moneda?.valor === "PESO MEXICANO"
               ? "MXN"
@@ -403,7 +504,7 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
             dias: null,
           },
           sancionEfectivamenteCobrada: {
-            monto: null,
+            monto: null, // Si en el futuro se agrega monto, usar formatearMonto()
             moneda: null,
             fechaCobro: null,
           },
@@ -433,14 +534,15 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
         break;
 
       case "SUSPENSION":
-        const plazo = procesarPlazoInhabilitacion(
-          entrada.inhabilitacion?.plazo
+        const plazoSuspension = calcularPlazoSuspension(
+          entrada.inhabilitacion?.fechaInicial,
+          entrada.inhabilitacion?.fechaFinal
         );
         sancionNoGrave.suspensionEmpleo = {
-          plazoMeses: plazo.meses,
-          plazoDias: plazo.dias,
-          plazoFechaInicial: entrada.inhabilitacion?.fechaInicial || null,
-          plazoFechaFinal: entrada.inhabilitacion?.fechaFinal || null,
+          plazoMeses: plazoSuspension.meses,
+          plazoDias: plazoSuspension.dias,
+          fechaInicial: entrada.inhabilitacion?.fechaInicial || null,
+          fechaFinal: entrada.inhabilitacion?.fechaFinal || null,
         };
         break;
 
@@ -609,7 +711,7 @@ function construirTipoSancionParticular(sancion, entrada, tipoPersona) {
 
     case "INDEMNIZACION":
       sancionBase.indemnizacion = {
-        monto: null,
+        monto: formatearMonto(entrada.multa?.monto),
         moneda: null,
         plazoPago: {
           anios: null,
@@ -617,7 +719,7 @@ function construirTipoSancionParticular(sancion, entrada, tipoPersona) {
           dias: null,
         },
         efectivamenteCobrada: {
-          monto: null,
+          monto: null, // Si en el futuro se agrega monto, usar formatearMonto()
           moneda: null,
           fechaCobro: null,
         },
@@ -627,7 +729,7 @@ function construirTipoSancionParticular(sancion, entrada, tipoPersona) {
 
     case "SANCION_ECONOMICA":
       sancionBase.sancionEconomica = {
-        monto: entrada.multa?.monto || null,
+        monto: formatearMonto(entrada.multa?.monto),
         moneda:
           entrada.multa?.moneda?.valor === "PESO MEXICANO"
             ? "MXN"
@@ -638,7 +740,7 @@ function construirTipoSancionParticular(sancion, entrada, tipoPersona) {
           dias: null,
         },
         efectivamenteCobrada: {
-          monto: null,
+          monto: null, // Si en el futuro se agrega monto, usar formatearMonto()
           moneda: null,
           fechaCobro: null,
         },
