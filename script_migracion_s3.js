@@ -5,6 +5,7 @@ const path = require("path");
 const inputDir = "../pruebas/datos_entrada/";
 const outputDir = "../pruebas/datos_salida/";
 const entidadFederativaDefault = "01";
+
 // Definición de tipos de faltas
 const faltasGraves = [
   "COHECHO O EXTORSION",
@@ -665,7 +666,6 @@ function construirTipoSancionParticular(sancion, entrada, tipoPersona) {
 }
 
 function transformarParticular(entrada, tipoPersona) {
-  // Función auxiliar para procesar tipoFalta
   const procesarTipoFalta = (falta) => ({
     clave:
       typeof falta === "object"
@@ -682,7 +682,6 @@ function transformarParticular(entrada, tipoPersona) {
     descripcionHechos: entrada.causaMotivoHechos || "",
   });
 
-  // Función auxiliar para procesar domicilio
   const procesarDomicilio = (domicilio, tipo) => {
     if (tipo === "mexico") {
       return {
@@ -694,7 +693,7 @@ function transformarParticular(entrada, tipoPersona) {
         municipioAlcaldia: domicilio?.municipio || "",
         codigoPostal: domicilio?.codigoPostal || "",
         entidadFederativa:
-          domicilio?.entidadFederativa.clave || entidadFederativaDefault,
+          domicilio?.entidadFederativa?.clave || entidadFederativaDefault,
       };
     }
     return {
@@ -709,11 +708,28 @@ function transformarParticular(entrada, tipoPersona) {
   };
 
   const datosBase = {
+    fecha: entrada.fechaCaptura || "",
+    expediente: entrada.expediente || "",
     faltaCometida: [procesarTipoFalta(entrada.tipoFalta)],
+    resolucion: {
+      tituloDocumento: "",
+      fechaResolucion: entrada.resolucion?.fechaResolucion || "",
+      fechaNotificacion: entrada.resolucion?.fechaNotificacion || "",
+      urlResolucion: entrada.resolucion?.url || "",
+      fechaResolucionFirme: entrada.resolucion?.fechaResolucionFirme || "",
+      fechaNotificacionFirme: entrada.resolucion?.fechaNotificacionFirme || "",
+      urlResolucionFirme: "",
+      autoridadResolutora: entrada.autoridadSancionadora || "",
+      autoridadInvestigadora: "",
+      autoridadSubstanciadora: "",
+      ordenJurisdiccional: "",
+      fechaEjecucion: entrada.resolucion?.fechaEjecucion || "",
+    },
     tipoSancion:
       entrada.tipoSancion?.map((sancion) =>
         construirTipoSancionParticular(sancion, entrada, tipoPersona)
       ) || [],
+    observaciones: entrada.observaciones || "",
   };
 
   if (tipoPersona === "fisica") {
@@ -747,7 +763,6 @@ function transformarParticular(entrada, tipoPersona) {
     };
   }
 
-  // Persona moral
   return {
     ...datosBase,
     datosGenerales: {
