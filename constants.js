@@ -1,0 +1,31 @@
+// Constantes generales del sistema
+const entidadFederativaDefault = "01";
+
+// Definición de tipos de faltas
+const faltasGraves = [
+  "COHECHO O EXTORSION",
+  "PECULADO",
+  "DESVIO DE RECURSOS PUBLICOS",
+  "UTILIZACION INDEBIDA DE INFORMACION",
+  "ABUSO DE FUNCIONES",
+  "ACTUACION BAJO CONFLICTO DE INTERES",
+  "CONTRATACION INDEBIDA",
+  "ENRIQUECIMIENTO OCULTO U OCULTAMIENTO DE CONFLICTO DE INTERES",
+  "TRAFICO DE INFLUENCIAS",
+  "ENCUBRIMIENTO",
+  "DESACATO",
+  "OBSTRUCCIÓN DE LA JUSTICIA",
+  "ADMINISTRATIVA GRAVE",
+];
+
+const faltasNoGraves = [
+  "NEGLIGENCIA ADMINISTRATIVA",
+  "INCUMPLIMIENTO EN DECLARACION DE SITUACION PATRIMONIAL",
+  "ADMINISTRATIVA NO GRAVE",
+];
+
+module.exports = {
+  entidadFederativaDefault,
+  faltasGraves,
+  faltasNoGraves
+};
