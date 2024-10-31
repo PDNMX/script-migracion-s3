@@ -3,6 +3,9 @@
 ## Descripción
 Script de Node.js para procesar y transformar archivos JSON conteniendo información sobre sanciones a servidores públicos y particulares. El script lee archivos JSON de un directorio de entrada, procesa su contenido y genera archivos JSON transformados en un directorio de salida con una estructura específica.
 
+## Nota importante:
+En caso de que el script no logre clasificar correctamente los registros según el campo `tipoFalta` obtenido del JSON de origen, se almacenarán en un directorio llamado "Otros" y deberán ser revisados y clasificados manualmente por la persona responsable de los datos.
+
 ## Requisitos
 - Node.js v22.x o superior
 - Las siguientes bibliotecas nativas de Node.js:
