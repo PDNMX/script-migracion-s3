@@ -30,10 +30,10 @@ const faltasNoGraves = [
 ];
 
 function procesarPlazoInhabilitacion(plazo) {
-  if (!plazo) return { anios: "", meses: "", dias: "" };
+  if (!plazo) return { anios: null, meses: null, dias: null };
 
   // Convertir a mayúsculas y eliminar paréntesis para uniformidad
-  const plazoNormalizado = plazo.toUpperCase().replace(/[()]/g, "");
+  const plazoNormalizado = plazo.toUpperCase().replace(/[()]/g, null);
 
   // Caso especial para texto como "TRES MESES"
   const palabrasNumericas = {
@@ -75,7 +75,7 @@ function procesarPlazoInhabilitacion(plazo) {
 }
 
 function mapearGenero(genero) {
-  const valor = genero?.valor?.toUpperCase() || "";
+  const valor = genero?.valor?.toUpperCase() || null;
   switch (valor) {
     case "MASCULINO":
       return "HOMBRE";
@@ -135,7 +135,7 @@ function mapearClaveFaltaParticular(claveOriginal, tipoPersona) {
   };
 
   // Normalizar la clave de entrada
-  const claveNormalizada = claveOriginal?.toUpperCase() || "";
+  const claveNormalizada = claveOriginal?.toUpperCase() || null;
 
   // Seleccionar el mapeo según el tipo de persona
   const mapeo = tipoPersona === "fisica" ? mapeoFisicas : mapeoMorales;
@@ -186,7 +186,7 @@ function obtenerClaveFalta(tipoFalta) {
 
   // Si es un objeto
   if (typeof tipoFalta === "object") {
-    const valor = tipoFalta.valor || "";
+    const valor = tipoFalta.valor || null;
 
     // Si el valor es "OTRO" o la clave es "OTRO"
     if (valor === "OTRO" || tipoFalta.clave === "OTRO") {
@@ -245,7 +245,7 @@ function obtenerClaveFalta(tipoFalta) {
   return {
     clave: "OTRO",
     incluirValorOriginal: true,
-    valorOriginal: tipoFalta || "",
+    valorOriginal: tipoFalta || null,
   };
 }
 
@@ -255,11 +255,11 @@ function clasificarPorTipoFalta(falta) {
     return "otro";
   }
 
-  let valorFalta = "";
+  let valorFalta = null;
 
   // Si es objeto, tomamos el valor
   if (typeof falta === "object") {
-    valorFalta = falta.valor || "";
+    valorFalta = falta.valor || null;
   } else {
     // Si es string, lo usamos directamente
     valorFalta = falta;
@@ -288,7 +288,7 @@ function obtenerClaveFaltaNoGrave(tipoFalta) {
 
   // Si es un objeto
   if (typeof tipoFalta === "object") {
-    const valor = tipoFalta.valor || "";
+    const valor = tipoFalta.valor || null;
 
     // Si el valor es "OTRO" o la clave es "OTRO"
     if (valor === "OTRO" || tipoFalta.clave === "OTRO") {
@@ -342,12 +342,12 @@ function obtenerClaveFaltaNoGrave(tipoFalta) {
   return {
     clave: "OTRO",
     incluirValorOriginal: true,
-    valorOriginal: tipoFalta || "",
+    valorOriginal: tipoFalta || null,
   };
 }
 
 function construirTipoSancion(sancion, entrada, tipoEsquema) {
-  const claveMapeada = mapearTipoSancion(sancion.clave || "", tipoEsquema);
+  const claveMapeada = mapearTipoSancion(sancion.clave || null, tipoEsquema);
 
   const base = {
     clave: claveMapeada,
@@ -361,16 +361,16 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
     switch (claveMapeada) {
       case "SUSPENSION":
         sancionGrave.suspension = {
-          plazoMeses: "",
-          plazoDias: "",
-          fechaInicial: "",
-          fechaFinal: "",
+          plazoMeses: null,
+          plazoDias: null,
+          fechaInicial: null,
+          fechaFinal: null,
         };
         break;
 
       case "DESTITUCION":
         sancionGrave.destitucionEmpleo = {
-          fechaDestitucion: "",
+          fechaDestitucion: null,
         };
         break;
 
@@ -382,32 +382,32 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
           plazoAnios: plazos.anios,
           plazoMeses: plazos.meses,
           plazoDias: plazos.dias,
-          fechaInicial: entrada.inhabilitacion?.fechaInicial || "",
-          fechaFinal: entrada.inhabilitacion?.fechaFinal || "",
+          fechaInicial: entrada.inhabilitacion?.fechaInicial || null,
+          fechaFinal: entrada.inhabilitacion?.fechaFinal || null,
         };
         break;
 
       case "SANCION_ECONOMICA":
         sancionGrave.sancionEconomica = {
-          monto: entrada.multa?.monto || "",
-          moneda: entrada.multa?.moneda?.valor || "",
+          monto: entrada.multa?.monto || null,
+          moneda: entrada.multa?.moneda?.valor || null,
           plazoPago: {
-            anios: "",
-            meses: "",
-            dias: "",
+            anios: null,
+            meses: null,
+            dias: null,
           },
           sancionEfectivamenteCobrada: {
-            monto: "",
-            moneda: "",
-            fechaCobro: "",
+            monto: null,
+            moneda: null,
+            fechaCobro: null,
           },
-          fechaPagoTotal: "",
+          fechaPagoTotal: null,
         };
         break;
 
       case "OTRO":
         sancionGrave.otro = {
-          denominacionSancion: sancion.valor || "",
+          denominacionSancion: sancion.valor || null,
         };
         break;
     }
@@ -422,22 +422,22 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
     switch (claveMapeada) {
       case "AMONESTACION":
         sancionNoGrave.amonestacion = {
-          tipo: "",
+          tipo: null,
         };
         break;
 
       case "SUSPENSION":
         sancionNoGrave.suspension = {
-          plazoMeses: "",
-          plazoDias: "",
-          plazoFechaInicial: "",
-          plazoFechaFinal: "",
+          plazoMeses: null,
+          plazoDias: null,
+          plazoFechaInicial: null,
+          plazoFechaFinal: null,
         };
         break;
 
       case "DESTITUCION":
         sancionNoGrave.destitucionEmpleo = {
-          fechaDestitucion: "",
+          fechaDestitucion: null,
         };
         break;
 
@@ -449,14 +449,14 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
           plazoAnios: plazos.anios,
           plazoMeses: plazos.meses,
           plazoDias: plazos.dias,
-          plazoFechaInicial: entrada.inhabilitacion?.fechaInicial || "",
-          plazoFechaFinal: entrada.inhabilitacion?.fechaFinal || "",
+          plazoFechaInicial: entrada.inhabilitacion?.fechaInicial || null,
+          plazoFechaFinal: entrada.inhabilitacion?.fechaFinal || null,
         };
         break;
 
       case "OTRO":
         sancionNoGrave.otro = {
-          denominacionSancion: sancion.valor || "",
+          denominacionSancion: sancion.valor || null,
         };
         break;
     }
@@ -474,9 +474,9 @@ function transformarServidorPublico(entrada, tipoSalida) {
   // Función auxiliar para construir datos generales
   const construirDatosGenerales = (servidor) => {
     const datos = {
-      nombres: servidor?.nombres || "",
-      primerApellido: servidor?.primerApellido || "",
-      segundoApellido: servidor?.segundoApellido || "",
+      nombres: servidor?.nombres || null,
+      primerApellido: servidor?.primerApellido || null,
+      segundoApellido: servidor?.segundoApellido || null,
       sexo: mapearGenero(servidor?.genero),
     };
 
@@ -494,20 +494,20 @@ function transformarServidorPublico(entrada, tipoSalida) {
   // Función auxiliar para construir la resolución
   const construirResolucion = (entrada, tipoSalida) => {
     const resolucion = {
-      tituloDocumento: "",
-      fechaResolucion: entrada.resolucion?.fechaResolucion || "",
-      fechaNotificacion: "",
-      fechaResolucionFirme: "",
-      fechaNotificacionFirme: "",
-      autoridadResolutora: entrada.autoridadSancionadora || "",
-      autoridadInvestigadora: "",
-      autoridadSubstanciadora: "",
+      tituloDocumento: null,
+      fechaResolucion: entrada.resolucion?.fechaResolucion || null,
+      fechaNotificacion: null,
+      fechaResolucionFirme: null,
+      fechaNotificacionFirme: null,
+      autoridadResolutora: entrada.autoridadSancionadora || null,
+      autoridadInvestigadora: null,
+      autoridadSubstanciadora: null,
     };
 
     // Campos específicos para graves u otro
     if (tipoSalida === "graves" || tipoSalida === "otro") {
-      resolucion.ordenJurisdiccional = "";
-      resolucion.fechaEjecucion = "";
+      resolucion.ordenJurisdiccional = null;
+      resolucion.fechaEjecucion = null;
 
       // Agregar URLs solo si existen
       if (entrada.resolucion?.url) {
@@ -522,25 +522,25 @@ function transformarServidorPublico(entrada, tipoSalida) {
   };
 
   const esquemaBase = {
-    fecha: entrada.fechaCaptura || "",
-    expediente: entrada.expediente || "",
+    fecha: entrada.fechaCaptura || null,
+    expediente: entrada.expediente || null,
     datosGenerales: construirDatosGenerales(entrada.servidorPublicoSancionado),
     empleoCargoComision: {
-      entidadFederativa: "",
-      nivelOrdenGobierno: "",
-      ambitoPublico: "",
-      nombreEntePublico: entrada.institucionDependencia?.nombre || "",
-      siglasEntePublico: entrada.institucionDependencia?.siglas || "",
+      entidadFederativa: null,
+      nivelOrdenGobierno: null,
+      ambitoPublico: null,
+      nombreEntePublico: entrada.institucionDependencia?.nombre || null,
+      siglasEntePublico: entrada.institucionDependencia?.siglas || null,
       nivelJerarquico: {
-        clave: "otro",
-        valor: entrada.servidorPublicoSancionado?.puesto || "",
+        clave: "OTRO",
+        valor: entrada.servidorPublicoSancionado?.puesto || null,
       },
-      denominacion: "",
-      areaAdscripcion: "",
+      denominacion: null,
+      areaAdscripcion: null,
     },
     origenProcedimiento: {
-      clave: "",
-      valor: "",
+      clave: null,
+      valor: null,
     },
   };
 
@@ -549,12 +549,12 @@ function transformarServidorPublico(entrada, tipoSalida) {
     clave: resultadoFalta.clave,
     normatividadInfringida: [
       {
-        nombreNormatividad: "",
-        articulo: "",
-        fraccion: "",
+        nombreNormatividad: null,
+        articulo: null,
+        fraccion: null,
       },
     ],
-    descripcionHechos: entrada.causaMotivoHechos || "",
+    descripcionHechos: entrada.causaMotivoHechos || null,
   };
 
   // Agregar valor solo si es necesario
@@ -570,7 +570,7 @@ function transformarServidorPublico(entrada, tipoSalida) {
       entrada.tipoSancion?.map((sancion) =>
         construirTipoSancion(sancion, entrada, tipoSalida)
       ) || [],
-    observaciones: entrada.observaciones || "",
+    observaciones: entrada.observaciones || null,
   };
 
   return resultado;
@@ -578,7 +578,7 @@ function transformarServidorPublico(entrada, tipoSalida) {
 
 function construirTipoSancionParticular(sancion, entrada, tipoPersona) {
   const claveMapeada = mapearTipoSancionParticular(
-    sancion.clave || "",
+    sancion.clave || null,
     tipoPersona
   );
 
@@ -590,50 +590,50 @@ function construirTipoSancionParticular(sancion, entrada, tipoPersona) {
   switch (claveMapeada) {
     case "INHABILITACION":
       sancionBase.inhabilitacion = {
-        plazoAnios: "",
-        plazoMeses: "",
-        plazoDias: "",
-        fechaInicial: entrada.inhabilitacion?.fechaInicial || "",
-        fechaFinal: entrada.inhabilitacion?.fechaFinal || "",
+        plazoAnios: null,
+        plazoMeses: null,
+        plazoDias: null,
+        fechaInicial: entrada.inhabilitacion?.fechaInicial || null,
+        fechaFinal: entrada.inhabilitacion?.fechaFinal || null,
       };
       break;
 
     case "INDEMNIZACION":
       sancionBase.indemnizacion = {
-        monto: "",
-        moneda: "",
+        monto: null,
+        moneda: null,
         plazoPago: {
-          anios: "",
-          meses: "",
-          dias: "",
+          anios: null,
+          meses: null,
+          dias: null,
         },
         efectivamenteCobrada: {
-          monto: "",
-          moneda: "",
-          fechaCobro: "",
+          monto: null,
+          moneda: null,
+          fechaCobro: null,
         },
-        fechaPagoTotal: "",
+        fechaPagoTotal: null,
       };
       break;
 
     case "SANCION_ECONOMICA":
       sancionBase.sancionEconomica = {
-        monto: entrada.multa?.monto || "",
+        monto: entrada.multa?.monto || null,
         moneda:
           entrada.multa?.moneda?.valor === "PESO MEXICANO"
             ? "MXN"
-            : entrada.multa?.moneda?.valor || "",
+            : entrada.multa?.moneda?.valor || null,
         plazoPago: {
-          anios: "",
-          meses: "",
-          dias: "",
+          anios: null,
+          meses: null,
+          dias: null,
         },
         efectivamenteCobrada: {
-          monto: "",
-          moneda: "",
-          fechaCobro: "",
+          monto: null,
+          moneda: null,
+          fechaCobro: null,
         },
-        fechaPagoTotal: "",
+        fechaPagoTotal: null,
       };
       break;
   }
@@ -642,30 +642,30 @@ function construirTipoSancionParticular(sancion, entrada, tipoPersona) {
   if (tipoPersona === "moral") {
     if (claveMapeada === "SUSPENSION_ACTIVIDADES") {
       sancionBase.suspensionActividades = {
-        plazoSuspensionAnios: "",
-        plazoSuspensionMeses: "",
-        plazoSuspensionDias: "",
-        fechaInicial: "",
-        fechaFinal: "",
+        plazoSuspensionAnios: null,
+        plazoSuspensionMeses: null,
+        plazoSuspensionDias: null,
+        fechaInicial: null,
+        fechaFinal: null,
       };
     }
 
     if (claveMapeada === "DISOLUCION_SOCIEDAD") {
       sancionBase.disolucionSociedad = {
-        fechaDisolucion: "",
+        fechaDisolucion: null,
       };
     }
 
     if (claveMapeada === "OTRO") {
       sancionBase.otro = {
-        denominacionSancion: sancion.valor || "",
+        denominacionSancion: sancion.valor || null,
       };
     }
   } else {
     // Para personas físicas, el campo otro es diferente
     if (claveMapeada === "OTRO") {
-      sancionBase.otro = "";
-      sancionBase.denominacionSancion = sancion.valor || "";
+      sancionBase.otro = null;
+      sancionBase.denominacionSancion = sancion.valor || null;
     }
   }
 
@@ -679,56 +679,57 @@ function transformarParticular(entrada, tipoPersona) {
       typeof falta === "object"
         ? mapearClaveFaltaParticular(falta.clave, tipoPersona)
         : mapearClaveFaltaParticular(falta, tipoPersona),
-    valor: typeof falta === "object" ? falta.valor || "" : falta || "",
+    valor: typeof falta === "object" ? falta.valor || null : falta || null,
     normatividadInfringida: [
       {
-        nombreNormatividad: "",
-        articulo: "",
-        fraccion: "",
+        nombreNormatividad: null,
+        articulo: null,
+        fraccion: null,
       },
     ],
-    descripcionHechos: entrada.causaMotivoHechos || "",
+    descripcionHechos: entrada.causaMotivoHechos || null,
   });
 
   // Función auxiliar para procesar domicilio
   const procesarDomicilio = (domicilio, tipo) => {
     if (tipo === "mexico") {
       return {
-        tipoVialidad: "",
-        nombreVialidad: domicilio?.vialidad?.valor || "",
-        numeroExterior: domicilio?.numeroExterior || "",
-        numeroInterior: domicilio?.numeroInterior || "",
-        coloniaLocalidad: domicilio?.localidad?.valor || "",
-        municipioAlcaldia: domicilio?.municipio || "",
-        codigoPostal: domicilio?.codigoPostal || "",
+        tipoVialidad: null,
+        nombreVialidad: domicilio?.vialidad?.valor || null,
+        numeroExterior: domicilio?.numeroExterior || null,
+        numeroInterior: domicilio?.numeroInterior || null,
+        coloniaLocalidad: domicilio?.localidad?.valor || null,
+        municipioAlcaldia: domicilio?.municipio || null,
+        codigoPostal: domicilio?.codigoPostal || null,
         entidadFederativa:
           domicilio?.entidadFederativa?.clave || entidadFederativaDefault,
       };
     }
     return {
-      ciudad: domicilio?.ciudadLocalidad || "",
-      provincia: domicilio?.estadoProvincia || "",
-      calle: domicilio?.calle || "",
-      numeroExterior: domicilio?.numeroExterior || "",
-      numeroInterior: domicilio?.numeroInterior || "",
-      codigoPostal: domicilio?.codigoPostal || "",
-      pais: domicilio?.pais?.valor || "",
+      ciudad: domicilio?.ciudadLocalidad || null,
+      provincia: domicilio?.estadoProvincia || null,
+      calle: domicilio?.calle || null,
+      numeroExterior: domicilio?.numeroExterior || null,
+      numeroInterior: domicilio?.numeroInterior || null,
+      codigoPostal: domicilio?.codigoPostal || null,
+      pais: domicilio?.pais?.valor || null,
     };
   };
 
   // Función auxiliar para construir el objeto resolución
   const construirResolucion = (entrada) => {
     const resolucion = {
-      tituloDocumento: "",
-      fechaResolucion: entrada.resolucion?.fechaResolucion || "",
-      fechaNotificacion: entrada.resolucion?.fechaNotificacion || "",
-      fechaResolucionFirme: entrada.resolucion?.fechaResolucionFirme || "",
-      fechaNotificacionFirme: entrada.resolucion?.fechaNotificacionFirme || "",
-      autoridadResolutora: entrada.autoridadSancionadora || "",
-      autoridadInvestigadora: "",
-      autoridadSubstanciadora: "",
-      ordenJurisdiccional: "",
-      fechaEjecucion: entrada.resolucion?.fechaEjecucion || "",
+      tituloDocumento: null,
+      fechaResolucion: entrada.resolucion?.fechaResolucion || null,
+      fechaNotificacion: entrada.resolucion?.fechaNotificacion || null,
+      fechaResolucionFirme: entrada.resolucion?.fechaResolucionFirme || null,
+      fechaNotificacionFirme:
+        entrada.resolucion?.fechaNotificacionFirme || null,
+      autoridadResolutora: entrada.autoridadSancionadora || null,
+      autoridadInvestigadora: null,
+      autoridadSubstanciadora: null,
+      ordenJurisdiccional: null,
+      fechaEjecucion: entrada.resolucion?.fechaEjecucion || null,
     };
 
     // Agregar URLs solo si existen
@@ -743,15 +744,15 @@ function transformarParticular(entrada, tipoPersona) {
   };
 
   const datosBase = {
-    fecha: entrada.fechaCaptura || "",
-    expediente: entrada.expediente || "",
+    fecha: entrada.fechaCaptura || null,
+    expediente: entrada.expediente || null,
     faltaCometida: [procesarTipoFalta(entrada.tipoFalta)],
     resolucion: construirResolucion(entrada),
     tipoSancion:
       entrada.tipoSancion?.map((sancion) =>
         construirTipoSancionParticular(sancion, entrada, tipoPersona)
       ) || [],
-    observaciones: entrada.observaciones || "",
+    observaciones: entrada.observaciones || null,
   };
 
   const construirDatosPersona = (persona) => {
@@ -771,17 +772,18 @@ function transformarParticular(entrada, tipoPersona) {
 
   if (tipoPersona === "fisica") {
     const nombreCompleto =
-      entrada.particularSancionado?.nombreRazonSocial || "";
+      entrada.particularSancionado?.nombreRazonSocial || null;
     const partes = nombreCompleto.split(" ").filter(Boolean);
-    const nombres = partes.length > 2 ? partes.slice(0, -2).join(" ") : "";
-    const primerApellido = partes.length > 1 ? partes[partes.length - 2] : "";
-    const segundoApellido = partes.length > 0 ? partes[partes.length - 1] : "";
+    const nombres = partes.length > 2 ? partes.slice(0, -2).join(" ") : null;
+    const primerApellido = partes.length > 1 ? partes[partes.length - 2] : null;
+    const segundoApellido =
+      partes.length > 0 ? partes[partes.length - 1] : null;
 
     const datosGenerales = {
       nombres,
       primerApellido,
       segundoApellido,
-      tipoDomicilio: "",
+      tipoDomicilio: null,
       domicilioMexico: procesarDomicilio(
         entrada.particularSancionado?.domicilioMexico,
         "mexico"
@@ -807,9 +809,9 @@ function transformarParticular(entrada, tipoPersona) {
 
   // Persona moral
   const datosGenerales = {
-    nombreRazonSocial: entrada.particularSancionado?.nombreRazonSocial || "",
-    objetoSocial: entrada.particularSancionado?.objetoSocial || "",
-    tipoDomicilio: "",
+    nombreRazonSocial: entrada.particularSancionado?.nombreRazonSocial || null,
+    objetoSocial: entrada.particularSancionado?.objetoSocial || null,
+    tipoDomicilio: null,
     domicilioMexico: procesarDomicilio(
       entrada.particularSancionado?.domicilioMexico,
       "mexico"
