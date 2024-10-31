@@ -390,7 +390,10 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
       case "SANCION_ECONOMICA":
         sancionGrave.sancionEconomica = {
           monto: entrada.multa?.monto || null,
-          moneda: entrada.multa?.moneda?.valor || null,
+          moneda:
+            entrada.multa?.moneda?.valor === "PESO MEXICANO"
+              ? "MXN"
+              : entrada.multa?.moneda?.valor || null,
           plazoPago: {
             anios: null,
             meses: null,
