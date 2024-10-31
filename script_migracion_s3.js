@@ -464,33 +464,75 @@ function construirTipoSancion(sancion, entrada, tipoEsquema) {
     return sancionNoGrave;
   }
 }
+
 function transformarServidorPublico(entrada, tipoSalida) {
   const resultadoFalta =
     tipoSalida === "no_graves"
       ? obtenerClaveFaltaNoGrave(entrada.tipoFalta)
       : obtenerClaveFalta(entrada.tipoFalta);
 
+  // Función auxiliar para construir datos generales
+  const construirDatosGenerales = (servidor) => {
+    const datos = {
+      nombres: servidor?.nombres || "",
+      primerApellido: servidor?.primerApellido || "",
+      segundoApellido: servidor?.segundoApellido || "",
+      sexo: mapearGenero(servidor?.genero),
+    };
+
+    // Agregar CURP y RFC solo si existen
+    if (servidor?.curp) {
+      datos.curp = servidor.curp;
+    }
+    if (servidor?.rfc) {
+      datos.rfc = servidor.rfc;
+    }
+
+    return datos;
+  };
+
+  // Función auxiliar para construir la resolución
+  const construirResolucion = (entrada, tipoSalida) => {
+    const resolucion = {
+      tituloDocumento: "",
+      fechaResolucion: entrada.resolucion?.fechaResolucion || "",
+      fechaNotificacion: "",
+      fechaResolucionFirme: "",
+      fechaNotificacionFirme: "",
+      autoridadResolutora: entrada.autoridadSancionadora || "",
+      autoridadInvestigadora: "",
+      autoridadSubstanciadora: "",
+    };
+
+    // Campos específicos para graves u otro
+    if (tipoSalida === "graves" || tipoSalida === "otro") {
+      resolucion.ordenJurisdiccional = "";
+      resolucion.fechaEjecucion = "";
+
+      // Agregar URLs solo si existen
+      if (entrada.resolucion?.url) {
+        resolucion.urlResolucion = entrada.resolucion.url;
+      }
+      if (entrada.resolucion?.urlResolucionFirme) {
+        resolucion.urlResolucionFirme = entrada.resolucion.urlResolucionFirme;
+      }
+    }
+
+    return resolucion;
+  };
+
   const esquemaBase = {
     fecha: entrada.fechaCaptura || "",
     expediente: entrada.expediente || "",
-    datosGenerales: {
-      nombres: entrada.servidorPublicoSancionado?.nombres || "",
-      primerApellido: entrada.servidorPublicoSancionado?.primerApellido || "",
-      segundoApellido: entrada.servidorPublicoSancionado?.segundoApellido || "",
-      curp: entrada.servidorPublicoSancionado?.curp || "",
-      rfc: entrada.servidorPublicoSancionado?.rfc || "",
-      sexo: mapearGenero(entrada.servidorPublicoSancionado?.genero),
-    },
+    datosGenerales: construirDatosGenerales(entrada.servidorPublicoSancionado),
     empleoCargoComision: {
-      entidadFederativa:
-        entrada.domicilioMexico?.entidadFederativa.clave ||
-        entidadFederativaDefault,
+      entidadFederativa: "",
       nivelOrdenGobierno: "",
       ambitoPublico: "",
       nombreEntePublico: entrada.institucionDependencia?.nombre || "",
       siglasEntePublico: entrada.institucionDependencia?.siglas || "",
       nivelJerarquico: {
-        clave: "OTRO",
+        clave: "otro",
         valor: entrada.servidorPublicoSancionado?.puesto || "",
       },
       denominacion: "",
@@ -520,53 +562,18 @@ function transformarServidorPublico(entrada, tipoSalida) {
     faltaCometidaBase.valor = resultadoFalta.valorOriginal;
   }
 
-  if (tipoSalida === "graves" || tipoSalida === "otro") {
-    return {
-      ...esquemaBase,
-      faltaCometida: [faltaCometidaBase],
-      resolucion: {
-        tituloDocumento: "",
-        fechaResolucion: entrada.resolucion?.fechaResolucion || "",
-        fechaNotificacion: "",
-        urlResolucion: entrada.resolucion?.url || "",
-        fechaResolucionFirme: "",
-        fechaNotificacionFirme: "",
-        urlResolucionFirme: "",
-        autoridadResolutora: entrada.autoridadSancionadora || "",
-        ordenJurisdiccional: "",
-        fechaEjecucion: "",
-        autoridadInvestigadora: "",
-        autoridadSubstanciadora: "",
-      },
-      tipoSancion:
-        entrada.tipoSancion?.map((sancion) =>
-          construirTipoSancion(sancion, entrada, tipoSalida)
-        ) || [],
-      observaciones: entrada.observaciones || "",
-    };
-  } else {
-    // no_graves
-    return {
-      ...esquemaBase,
-      faltaCometida: [faltaCometidaBase],
-      resolucion: {
-        tituloDocumento: "",
-        fechaResolucion: entrada.resolucion?.fechaResolucion || "",
-        fechaNotificacion: "",
-        fechaResolucionFirme: "",
-        fechaNotificacionFirme: "",
-        fechaEjecucion: "",
-        autoridadResolutora: entrada.autoridadSancionadora || "",
-        autoridadInvestigadora: "",
-        autoridadSubstanciadora: "",
-      },
-      tipoSancion:
-        entrada.tipoSancion?.map((sancion) =>
-          construirTipoSancion(sancion, entrada, tipoSalida)
-        ) || [],
-      observaciones: entrada.observaciones || "",
-    };
-  }
+  const resultado = {
+    ...esquemaBase,
+    faltaCometida: [faltaCometidaBase],
+    resolucion: construirResolucion(entrada, tipoSalida),
+    tipoSancion:
+      entrada.tipoSancion?.map((sancion) =>
+        construirTipoSancion(sancion, entrada, tipoSalida)
+      ) || [],
+    observaciones: entrada.observaciones || "",
+  };
+
+  return resultado;
 }
 
 function construirTipoSancionParticular(sancion, entrada, tipoPersona) {
@@ -666,6 +673,7 @@ function construirTipoSancionParticular(sancion, entrada, tipoPersona) {
 }
 
 function transformarParticular(entrada, tipoPersona) {
+  // Función auxiliar para procesar tipoFalta
   const procesarTipoFalta = (falta) => ({
     clave:
       typeof falta === "object"
@@ -682,6 +690,7 @@ function transformarParticular(entrada, tipoPersona) {
     descripcionHechos: entrada.causaMotivoHechos || "",
   });
 
+  // Función auxiliar para procesar domicilio
   const procesarDomicilio = (domicilio, tipo) => {
     if (tipo === "mexico") {
       return {
@@ -707,24 +716,37 @@ function transformarParticular(entrada, tipoPersona) {
     };
   };
 
-  const datosBase = {
-    fecha: entrada.fechaCaptura || "",
-    expediente: entrada.expediente || "",
-    faltaCometida: [procesarTipoFalta(entrada.tipoFalta)],
-    resolucion: {
+  // Función auxiliar para construir el objeto resolución
+  const construirResolucion = (entrada) => {
+    const resolucion = {
       tituloDocumento: "",
       fechaResolucion: entrada.resolucion?.fechaResolucion || "",
       fechaNotificacion: entrada.resolucion?.fechaNotificacion || "",
-      urlResolucion: entrada.resolucion?.url || "",
       fechaResolucionFirme: entrada.resolucion?.fechaResolucionFirme || "",
       fechaNotificacionFirme: entrada.resolucion?.fechaNotificacionFirme || "",
-      urlResolucionFirme: "",
       autoridadResolutora: entrada.autoridadSancionadora || "",
       autoridadInvestigadora: "",
       autoridadSubstanciadora: "",
       ordenJurisdiccional: "",
       fechaEjecucion: entrada.resolucion?.fechaEjecucion || "",
-    },
+    };
+
+    // Agregar URLs solo si existen
+    if (entrada.resolucion?.url) {
+      resolucion.urlResolucion = entrada.resolucion.url;
+    }
+    if (entrada.resolucion?.urlResolucionFirme) {
+      resolucion.urlResolucionFirme = entrada.resolucion.urlResolucionFirme;
+    }
+
+    return resolucion;
+  };
+
+  const datosBase = {
+    fecha: entrada.fechaCaptura || "",
+    expediente: entrada.expediente || "",
+    faltaCometida: [procesarTipoFalta(entrada.tipoFalta)],
+    resolucion: construirResolucion(entrada),
     tipoSancion:
       entrada.tipoSancion?.map((sancion) =>
         construirTipoSancionParticular(sancion, entrada, tipoPersona)
@@ -732,43 +754,33 @@ function transformarParticular(entrada, tipoPersona) {
     observaciones: entrada.observaciones || "",
   };
 
+  const construirDatosPersona = (persona) => {
+    if (!persona) return null;
+
+    const datos = {};
+
+    if (persona.nombres) datos.nombres = persona.nombres;
+    if (persona.primerApellido) datos.primerApellido = persona.primerApellido;
+    if (persona.segundoApellido)
+      datos.segundoApellido = persona.segundoApellido;
+    if (persona.curp) datos.curp = persona.curp;
+    if (persona.rfc) datos.rfc = persona.rfc;
+
+    return Object.keys(datos).length > 0 ? datos : null;
+  };
+
   if (tipoPersona === "fisica") {
     const nombreCompleto =
       entrada.particularSancionado?.nombreRazonSocial || "";
     const partes = nombreCompleto.split(" ").filter(Boolean);
-
-    // Asegurarse de que haya suficientes partes para nombres y apellidos
     const nombres = partes.length > 2 ? partes.slice(0, -2).join(" ") : "";
     const primerApellido = partes.length > 1 ? partes[partes.length - 2] : "";
     const segundoApellido = partes.length > 0 ? partes[partes.length - 1] : "";
 
-    return {
-      ...datosBase,
-      datosGenerales: {
-        nombres,
-        primerApellido,
-        segundoApellido,
-        curp: "",
-        rfc: entrada.particularSancionado?.rfc || "",
-        tipoDomicilio: "",
-        domicilioMexico: procesarDomicilio(
-          entrada.particularSancionado?.domicilioMexico,
-          "mexico"
-        ),
-        domicilioExtranjero: procesarDomicilio(
-          entrada.particularSancionado?.domicilioExtranjero,
-          "extranjero"
-        ),
-      },
-    };
-  }
-
-  return {
-    ...datosBase,
-    datosGenerales: {
-      nombreRazonSocial: entrada.particularSancionado?.nombreRazonSocial || "",
-      rfc: entrada.particularSancionado?.rfc || "",
-      objetoSocial: entrada.particularSancionado?.objetoSocial || "",
+    const datosGenerales = {
+      nombres,
+      primerApellido,
+      segundoApellido,
       tipoDomicilio: "",
       domicilioMexico: procesarDomicilio(
         entrada.particularSancionado?.domicilioMexico,
@@ -778,24 +790,63 @@ function transformarParticular(entrada, tipoPersona) {
         entrada.particularSancionado?.domicilioExtranjero,
         "extranjero"
       ),
-    },
-    datosDirGeneralReprLegal: {
-      directorGeneral: {
-        nombres: entrada.directorGeneral?.nombres || "",
-        primerApellido: entrada.directorGeneral?.primerApellido || "",
-        segundoApellido: entrada.directorGeneral?.segundoApellido || "",
-        rfc: "",
-        curp: entrada.directorGeneral?.curp || "",
-      },
-      representanteLegal: {
-        nombres: entrada.apoderadoLegal?.nombres || "",
-        primerApellido: entrada.apoderadoLegal?.primerApellido || "",
-        segundoApellido: entrada.apoderadoLegal?.segundoApellido || "",
-        rfc: "",
-        curp: entrada.apoderadoLegal?.curp || "",
-      },
-    },
+    };
+
+    if (entrada.particularSancionado?.curp) {
+      datosGenerales.curp = entrada.particularSancionado.curp;
+    }
+    if (entrada.particularSancionado?.rfc) {
+      datosGenerales.rfc = entrada.particularSancionado.rfc;
+    }
+
+    return {
+      ...datosBase,
+      datosGenerales,
+    };
+  }
+
+  // Persona moral
+  const datosGenerales = {
+    nombreRazonSocial: entrada.particularSancionado?.nombreRazonSocial || "",
+    objetoSocial: entrada.particularSancionado?.objetoSocial || "",
+    tipoDomicilio: "",
+    domicilioMexico: procesarDomicilio(
+      entrada.particularSancionado?.domicilioMexico,
+      "mexico"
+    ),
+    domicilioExtranjero: procesarDomicilio(
+      entrada.particularSancionado?.domicilioExtranjero,
+      "extranjero"
+    ),
   };
+
+  if (entrada.particularSancionado?.rfc) {
+    datosGenerales.rfc = entrada.particularSancionado.rfc;
+  }
+
+  const resultado = {
+    ...datosBase,
+    datosGenerales,
+  };
+
+  // Construir datosDirGeneralReprLegal solo si hay información
+  const directorGeneral = construirDatosPersona(entrada.directorGeneral);
+  const representanteLegal = construirDatosPersona(entrada.apoderadoLegal);
+
+  if (directorGeneral || representanteLegal) {
+    resultado.datosDirGeneralReprLegal = {};
+
+    if (directorGeneral) {
+      resultado.datosDirGeneralReprLegal.directorGeneral = directorGeneral;
+    }
+
+    if (representanteLegal) {
+      resultado.datosDirGeneralReprLegal.representanteLegal =
+        representanteLegal;
+    }
+  }
+
+  return resultado;
 }
 
 async function crearDirectorioSiNoExiste(dir) {
