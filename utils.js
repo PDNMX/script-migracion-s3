@@ -1,6 +1,45 @@
 const fs = require("fs").promises;
 const path = require("path");
 
+// Función para calcular plazo de suspensión
+const calcularPlazoSuspension = (fechaInicial, fechaFinal) => {
+  if (!fechaInicial || !fechaFinal) {
+    return { meses: null, dias: null };
+  }
+
+  try {
+    // Convertir strings a objetos Date
+    const inicio = new Date(fechaInicial);
+    const fin = new Date(fechaFinal);
+
+    // Verificar si las fechas son válidas
+    if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
+      return { meses: null, dias: null };
+    }
+
+    // Verificar que la fecha final sea posterior a la inicial
+    if (fin < inicio) {
+      return { meses: null, dias: null };
+    }
+
+    // Calcular la diferencia en días total
+    const diffTime = Math.abs(fin - inicio);
+    const totalDias = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    // Calcular meses completos y días restantes
+    const meses = Math.floor(totalDias / 30);
+    const dias = totalDias % 30;
+
+    return {
+      meses: meses || null, // Si es 0, convertir a null
+      dias: dias || null, // Si es 0, convertir a null
+    };
+  } catch (error) {
+    console.error("Error calculando el plazo de suspensión:", error);
+    return { meses: null, dias: null };
+  }
+};
+
 // Función para formatear montos
 const formatearMonto = (monto) => {
   if (monto === null || monto === undefined) return null;
@@ -37,17 +76,21 @@ const getCommandLineArgs = () => {
       node script.js --input "./datos_entrada" --output "./datos_salida"
   `;
 
-  if (args.length !== 4 || !args.includes('--input') || !args.includes('--output')) {
+  if (
+    args.length !== 4 ||
+    !args.includes("--input") ||
+    !args.includes("--output")
+  ) {
     console.log(usage);
     process.exit(1);
   }
 
-  const inputIndex = args.indexOf('--input');
-  const outputIndex = args.indexOf('--output');
+  const inputIndex = args.indexOf("--input");
+  const outputIndex = args.indexOf("--output");
 
   return {
     inputDir: path.resolve(args[inputIndex + 1]),
-    outputDir: path.resolve(args[outputIndex + 1])
+    outputDir: path.resolve(args[outputIndex + 1]),
   };
 };
 
@@ -67,7 +110,9 @@ const validarArchivosJSON = async (rutaArchivo) => {
     const datos = JSON.parse(contenido);
 
     if (!Array.isArray(datos)) {
-      throw new Error(`El archivo ${rutaArchivo} no contiene un arreglo de objetos JSON`);
+      throw new Error(
+        `El archivo ${rutaArchivo} no contiene un arreglo de objetos JSON`
+      );
     }
 
     return true;
@@ -84,16 +129,27 @@ const procesarPlazoInhabilitacion = (plazo) => {
   const plazoNormalizado = plazo.toUpperCase().replace(/[()]/g, "");
 
   const palabrasNumericas = {
-    UN: 1, UNO: 1, DOS: 2, TRES: 3, CUATRO: 4,
-    CINCO: 5, SEIS: 6, SIETE: 7, OCHO: 8,
-    NUEVE: 9, DIEZ: 10
+    UN: 1,
+    UNO: 1,
+    DOS: 2,
+    TRES: 3,
+    CUATRO: 4,
+    CINCO: 5,
+    SEIS: 6,
+    SIETE: 7,
+    OCHO: 8,
+    NUEVE: 9,
+    DIEZ: 10,
   };
 
   for (const [palabra, numero] of Object.entries(palabrasNumericas)) {
     if (plazoNormalizado.includes(palabra)) {
-      if (plazoNormalizado.includes("AÑO")) return { anios: numero, meses: 0, dias: 0 };
-      if (plazoNormalizado.includes("MES")) return { anios: 0, meses: numero, dias: 0 };
-      if (plazoNormalizado.includes("DIA")) return { anios: 0, meses: 0, dias: numero };
+      if (plazoNormalizado.includes("AÑO"))
+        return { anios: numero, meses: 0, dias: 0 };
+      if (plazoNormalizado.includes("MES"))
+        return { anios: 0, meses: numero, dias: 0 };
+      if (plazoNormalizado.includes("DIA"))
+        return { anios: 0, meses: 0, dias: numero };
     }
   }
 
@@ -104,7 +160,7 @@ const procesarPlazoInhabilitacion = (plazo) => {
   return {
     anios: aniosMatch ? parseInt(aniosMatch[1]) : 0,
     meses: mesesMatch ? parseInt(mesesMatch[1]) : 0,
-    dias: diasMatch ? parseInt(diasMatch[1]) : 0
+    dias: diasMatch ? parseInt(diasMatch[1]) : 0,
   };
 };
 
@@ -112,9 +168,12 @@ const procesarPlazoInhabilitacion = (plazo) => {
 const mapearGenero = (genero) => {
   const valor = genero?.valor?.toUpperCase() || null;
   switch (valor) {
-    case "MASCULINO": return "HOMBRE";
-    case "FEMENINO": return "MUJER";
-    default: return valor;
+    case "MASCULINO":
+      return "HOMBRE";
+    case "FEMENINO":
+      return "MUJER";
+    default:
+      return valor;
   }
 };
 
@@ -124,5 +183,6 @@ module.exports = {
   crearDirectorioSiNoExiste,
   validarArchivosJSON,
   procesarPlazoInhabilitacion,
-  mapearGenero
+  mapearGenero,
+  calcularPlazoSuspension, // Agregar esta línea
 };

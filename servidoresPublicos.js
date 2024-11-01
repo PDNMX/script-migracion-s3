@@ -1,40 +1,49 @@
-const { formatearMonto, procesarPlazoInhabilitacion, mapearGenero } = require('./utils');
-const { entidadFederativaDefault, faltasGraves, faltasNoGraves } = require('./constants');
+const {
+  formatearMonto,
+  procesarPlazoInhabilitacion,
+  mapearGenero,
+  calcularPlazoSuspension, 
+} = require("./utils");
+const {
+  entidadFederativaDefault,
+  faltasGraves,
+  faltasNoGraves,
+} = require("./constants");
 
-const clasificarPorTipoFalta = falta => {
-  if (!falta) return 'otro';
+const clasificarPorTipoFalta = (falta) => {
+  if (!falta) return "otro";
 
   let valorFalta = null;
-  if (typeof falta === 'object') {
+  if (typeof falta === "object") {
     valorFalta = falta.valor || null;
   } else {
     valorFalta = falta;
   }
 
-  if (faltasGraves.includes(valorFalta)) return 'graves';
-  if (faltasNoGraves.includes(valorFalta)) return 'no_graves';
-  return 'otro';
+  if (faltasGraves.includes(valorFalta)) return "graves";
+  if (faltasNoGraves.includes(valorFalta)) return "no_graves";
+  return "otro";
 };
 
-const obtenerClaveFalta = tipoFalta => {
+const obtenerClaveFalta = (tipoFalta) => {
   // Implementación de obtenerClaveFalta para servidores públicos
   // Si es un string "Dato no proporcionado"
-  if (tipoFalta === 'Dato no proporcionado') {
+  if (tipoFalta === "Dato no proporcionado") {
     return {
-      clave: 'OTRO',
+      clave: "OTRO",
       incluirValorOriginal: true,
       valorOriginal: tipoFalta,
     };
   }
 
   // Si es un objeto
-  if (typeof tipoFalta === 'object') {
+  if (typeof tipoFalta === "object") {
     const valor = tipoFalta.valor || null;
 
     // Si el valor es "OTRO" o la clave es "OTRO"
-    if (valor === 'OTRO' || tipoFalta.clave === 'OTRO') {
+    if (valor === "OTRO" || tipoFalta.clave === "OTRO") {
       return {
-        clave: 'OTRO',
+        clave: "OTRO",
         incluirValorOriginal: true,
         valorOriginal: valor,
       };
@@ -45,27 +54,29 @@ const obtenerClaveFalta = tipoFalta => {
 
     // Mapeo de faltas conocidas
     const mapeoFaltas = [
-      { buscar: 'ABUSO DE FUNCIONES', clave: 'ABUSO_FUNCIONES' },
-      { buscar: 'COHECHO', clave: 'COHECHO' },
-      { buscar: 'PECULADO', clave: 'PECULADO' },
-      { buscar: 'DESVIO DE RECURSOS', clave: 'DESVIO_RECURSOS_PUBLICOS' },
+      { buscar: "ABUSO DE FUNCIONES", clave: "ABUSO_FUNCIONES" },
+      { buscar: "COHECHO", clave: "COHECHO" },
+      { buscar: "PECULADO", clave: "PECULADO" },
+      { buscar: "DESVIO DE RECURSOS", clave: "DESVIO_RECURSOS_PUBLICOS" },
       {
-        buscar: 'UTILIZACION INDEBIDA DE INFORMACION',
-        clave: 'UTILIZACION_INDEBIDA_INFORMACION',
+        buscar: "UTILIZACION INDEBIDA DE INFORMACION",
+        clave: "UTILIZACION_INDEBIDA_INFORMACION",
       },
-      { buscar: 'CONFLICTO DE INTERES', clave: 'CONFLICTO_INTERES' },
-      { buscar: 'CONTRATACION INDEBIDA', clave: 'CONTRATACION_INDEBIDA' },
-      { buscar: 'ENRIQUECIMIENTO OCULTO', clave: 'ENRIQUECIMIENTO_OCULTO' },
-      { buscar: 'TRAFICO DE INFLUENCIAS', clave: 'TRAFICO_INFLUENCIAS' },
-      { buscar: 'SIMULACION', clave: 'SIMULACION_ACTO_JURIDICO' },
-      { buscar: 'ENCUBRIMIENTO', clave: 'ENCUBRIMIENTO' },
-      { buscar: 'DESACATO', clave: 'DESACATO' },
-      { buscar: 'NEPOTISMO', clave: 'NEPOTISMO' },
-      { buscar: 'OBSTRUCCION', clave: 'OBSTRUCCION' },
+      { buscar: "CONFLICTO DE INTERES", clave: "CONFLICTO_INTERES" },
+      { buscar: "CONTRATACION INDEBIDA", clave: "CONTRATACION_INDEBIDA" },
+      { buscar: "ENRIQUECIMIENTO OCULTO", clave: "ENRIQUECIMIENTO_OCULTO" },
+      { buscar: "TRAFICO DE INFLUENCIAS", clave: "TRAFICO_INFLUENCIAS" },
+      { buscar: "SIMULACION", clave: "SIMULACION_ACTO_JURIDICO" },
+      { buscar: "ENCUBRIMIENTO", clave: "ENCUBRIMIENTO" },
+      { buscar: "DESACATO", clave: "DESACATO" },
+      { buscar: "NEPOTISMO", clave: "NEPOTISMO" },
+      { buscar: "OBSTRUCCION", clave: "OBSTRUCCION" },
     ];
 
     // Buscar coincidencia
-    const coincidencia = mapeoFaltas.find(item => valorNormalizado.includes(item.buscar));
+    const coincidencia = mapeoFaltas.find((item) =>
+      valorNormalizado.includes(item.buscar)
+    );
 
     if (coincidencia) {
       return {
@@ -76,7 +87,7 @@ const obtenerClaveFalta = tipoFalta => {
 
     // Si no hay coincidencia, retornar el valor original
     return {
-      clave: 'OTRO',
+      clave: "OTRO",
       incluirValorOriginal: true,
       valorOriginal: valor,
     };
@@ -84,31 +95,31 @@ const obtenerClaveFalta = tipoFalta => {
 
   // Si es cualquier otro caso
   return {
-    clave: 'OTRO',
+    clave: "OTRO",
     incluirValorOriginal: true,
     valorOriginal: tipoFalta || null,
   };
 };
 
-const obtenerClaveFaltaNoGrave = tipoFalta => {
+const obtenerClaveFaltaNoGrave = (tipoFalta) => {
   // Implementación de obtenerClaveFaltaNoGrave
   // Si es un string "Dato no proporcionado"
-  if (tipoFalta === 'Dato no proporcionado') {
+  if (tipoFalta === "Dato no proporcionado") {
     return {
-      clave: 'OTRO',
+      clave: "OTRO",
       incluirValorOriginal: true,
       valorOriginal: tipoFalta,
     };
   }
 
   // Si es un objeto
-  if (typeof tipoFalta === 'object') {
+  if (typeof tipoFalta === "object") {
     const valor = tipoFalta.valor || null;
 
     // Si el valor es "OTRO" o la clave es "OTRO"
-    if (valor === 'OTRO' || tipoFalta.clave === 'OTRO') {
+    if (valor === "OTRO" || tipoFalta.clave === "OTRO") {
       return {
-        clave: 'OTRO',
+        clave: "OTRO",
         incluirValorOriginal: true,
         valorOriginal: valor,
       };
@@ -119,22 +130,24 @@ const obtenerClaveFaltaNoGrave = tipoFalta => {
 
     // Mapeo de faltas no graves
     const mapeoFaltasNoGraves = [
-      { buscar: 'CUMPLIR CON LAS FUNCIONES', clave: 'CUMPLIR_FUNCIONES' },
-      { buscar: 'DENUNCIAR LAS FALTAS', clave: 'DENUNCIAR_FALTAS' },
-      { buscar: 'ATENDER LAS INSTRUCCIONES', clave: 'ATENDER_INSTRUCCIONES' },
-      { buscar: 'PRESENTAR DECLARACIONES', clave: 'DECLARACIONES' },
-      { buscar: 'CUSTODIAR DOCUMENTACION', clave: 'CUSTODIAR_DOCUMENTACION' },
-      { buscar: 'SUPERVISAR', clave: 'SUPERVISAR_ART_49_LGRA' },
-      { buscar: 'RENDIR CUENTAS', clave: 'RENDIR_CUENTAS' },
+      { buscar: "CUMPLIR CON LAS FUNCIONES", clave: "CUMPLIR_FUNCIONES" },
+      { buscar: "DENUNCIAR LAS FALTAS", clave: "DENUNCIAR_FALTAS" },
+      { buscar: "ATENDER LAS INSTRUCCIONES", clave: "ATENDER_INSTRUCCIONES" },
+      { buscar: "PRESENTAR DECLARACIONES", clave: "DECLARACIONES" },
+      { buscar: "CUSTODIAR DOCUMENTACION", clave: "CUSTODIAR_DOCUMENTACION" },
+      { buscar: "SUPERVISAR", clave: "SUPERVISAR_ART_49_LGRA" },
+      { buscar: "RENDIR CUENTAS", clave: "RENDIR_CUENTAS" },
       {
-        buscar: 'COLABORAR EN PROCEDIMIENTOS',
-        clave: 'COLABORAR_PROCEDIMIENTOS',
+        buscar: "COLABORAR EN PROCEDIMIENTOS",
+        clave: "COLABORAR_PROCEDIMIENTOS",
       },
-      { buscar: 'CAUSAR DAÑOS', clave: 'CAUSAR_DANOS' },
+      { buscar: "CAUSAR DAÑOS", clave: "CAUSAR_DANOS" },
     ];
 
     // Buscar coincidencia
-    const coincidencia = mapeoFaltasNoGraves.find(item => valorNormalizado.includes(item.buscar));
+    const coincidencia = mapeoFaltasNoGraves.find((item) =>
+      valorNormalizado.includes(item.buscar)
+    );
 
     if (coincidencia) {
       return {
@@ -145,7 +158,7 @@ const obtenerClaveFaltaNoGrave = tipoFalta => {
 
     // Si no hay coincidencia, retornar el valor original
     return {
-      clave: 'OTRO',
+      clave: "OTRO",
       incluirValorOriginal: true,
       valorOriginal: valor,
     };
@@ -153,7 +166,7 @@ const obtenerClaveFaltaNoGrave = tipoFalta => {
 
   // Si es cualquier otro caso
   return {
-    clave: 'OTRO',
+    clave: "OTRO",
     incluirValorOriginal: true,
     valorOriginal: tipoFalta || null,
   };
@@ -163,31 +176,31 @@ const mapearTipoSancion = (clave, tipoEsquema) => {
   // Implementación de mapearTipoSancion
   // Mapeo del catálogo original a los nuevos valores
   const mapeoFisicas = {
-    I: 'INHABILITACION',
-    IND: 'INDEMNIZACION',
-    SE: 'SANCION_ECONOMICA',
-    M: 'SANCION_ECONOMICA',
-    O: 'OTRO',
+    I: "INHABILITACION",
+    IND: "INDEMNIZACION",
+    SE: "SANCION_ECONOMICA",
+    M: "SANCION_ECONOMICA",
+    O: "OTRO",
   };
 
   const mapeoMorales = {
-    I: 'INHABILITACION',
-    IND: 'INDEMNIZACION',
-    SE: 'SANCION_ECONOMICA',
-    M: 'SANCION_ECONOMICA',
-    S: 'SUSPENSION_ACTIVIDADES',
-    D: 'DISOLUCION_SOCIEDAD',
-    O: 'OTRO',
+    I: "INHABILITACION",
+    IND: "INDEMNIZACION",
+    SE: "SANCION_ECONOMICA",
+    M: "SANCION_ECONOMICA",
+    S: "SUSPENSION_ACTIVIDADES",
+    D: "DISOLUCION_SOCIEDAD",
+    O: "OTRO",
   };
 
   // Normalizar la clave de entrada
   const claveNormalizada = clave.toUpperCase();
 
   // Seleccionar el mapeo según el tipo de persona
-  const mapeo = tipoPersona === 'fisica' ? mapeoFisicas : mapeoMorales;
+  const mapeo = tipoPersona === "fisica" ? mapeoFisicas : mapeoMorales;
 
   // Retornar el valor mapeado o OTRO si no hay coincidencia
-  return mapeo[claveNormalizada] || 'OTRO';
+  return mapeo[claveNormalizada] || "OTRO";
 };
 
 const construirTipoSancion = (sancion, entrada, tipoEsquema) => {
@@ -198,16 +211,16 @@ const construirTipoSancion = (sancion, entrada, tipoEsquema) => {
     clave: claveMapeada,
   };
 
-  if (tipoEsquema === 'graves' || tipoEsquema === 'otro') {
+  if (tipoEsquema === "graves" || tipoEsquema === "otro") {
     const sancionGrave = {
       ...base,
     };
 
     switch (claveMapeada) {
-      case 'SUSPENSION':
+      case "SUSPENSION":
         const plazoSuspension = calcularPlazoSuspension(
           entrada.inhabilitacion?.fechaInicial,
-          entrada.inhabilitacion?.fechaFinal,
+          entrada.inhabilitacion?.fechaFinal
         );
         sancionGrave.suspensionEmpleo = {
           plazoMeses: plazoSuspension.meses,
@@ -217,14 +230,16 @@ const construirTipoSancion = (sancion, entrada, tipoEsquema) => {
         };
         break;
 
-      case 'DESTITUCION':
+      case "DESTITUCION":
         sancionGrave.destitucionEmpleo = {
           fechaDestitucion: null,
         };
         break;
 
-      case 'INHABILITACION':
-        const plazos = procesarPlazoInhabilitacion(entrada.inhabilitacion?.plazo);
+      case "INHABILITACION":
+        const plazos = procesarPlazoInhabilitacion(
+          entrada.inhabilitacion?.plazo
+        );
         sancionGrave.inhabilitacion = {
           plazoAnios: plazos.anios,
           plazoMeses: plazos.meses,
@@ -234,10 +249,13 @@ const construirTipoSancion = (sancion, entrada, tipoEsquema) => {
         };
         break;
 
-      case 'SANCION_ECONOMICA':
+      case "SANCION_ECONOMICA":
         sancionGrave.sancionEconomica = {
           monto: formatearMonto(entrada.multa?.monto),
-          moneda: entrada.multa?.moneda?.valor === 'PESO MEXICANO' ? 'MXN' : entrada.multa?.moneda?.valor || null,
+          moneda:
+            entrada.multa?.moneda?.valor === "PESO MEXICANO"
+              ? "MXN"
+              : entrada.multa?.moneda?.valor || null,
           plazoPago: {
             anios: null,
             meses: null,
@@ -252,7 +270,7 @@ const construirTipoSancion = (sancion, entrada, tipoEsquema) => {
         };
         break;
 
-      case 'OTRO':
+      case "OTRO":
         sancionGrave.otro = {
           denominacionSancion: sancion.valor || null,
         };
@@ -267,16 +285,16 @@ const construirTipoSancion = (sancion, entrada, tipoEsquema) => {
     };
 
     switch (claveMapeada) {
-      case 'AMONESTACION':
+      case "AMONESTACION":
         sancionNoGrave.amonestacion = {
           tipo: null,
         };
         break;
 
-      case 'SUSPENSION':
+      case "SUSPENSION":
         const plazoSuspension = calcularPlazoSuspension(
           entrada.inhabilitacion?.fechaInicial,
-          entrada.inhabilitacion?.fechaFinal,
+          entrada.inhabilitacion?.fechaFinal
         );
         sancionNoGrave.suspensionEmpleo = {
           plazoMeses: plazoSuspension.meses,
@@ -286,14 +304,16 @@ const construirTipoSancion = (sancion, entrada, tipoEsquema) => {
         };
         break;
 
-      case 'DESTITUCION':
+      case "DESTITUCION":
         sancionNoGrave.destitucionEmpleo = {
           fechaDestitucion: null,
         };
         break;
 
-      case 'INHABILITACION':
-        const plazos = procesarPlazoInhabilitacion(entrada.inhabilitacion?.plazo);
+      case "INHABILITACION":
+        const plazos = procesarPlazoInhabilitacion(
+          entrada.inhabilitacion?.plazo
+        );
         sancionNoGrave.inhabilitacion = {
           plazoAnios: plazos.anios,
           plazoMeses: plazos.meses,
@@ -303,7 +323,7 @@ const construirTipoSancion = (sancion, entrada, tipoEsquema) => {
         };
         break;
 
-      case 'OTRO':
+      case "OTRO":
         sancionNoGrave.otro = {
           denominacionSancion: sancion.valor || null,
         };
@@ -317,10 +337,12 @@ const construirTipoSancion = (sancion, entrada, tipoEsquema) => {
 const transformarServidorPublico = (entrada, tipoSalida) => {
   // Implementación de transformarServidorPublico
   const resultadoFalta =
-    tipoSalida === 'no_graves' ? obtenerClaveFaltaNoGrave(entrada.tipoFalta) : obtenerClaveFalta(entrada.tipoFalta);
+    tipoSalida === "no_graves"
+      ? obtenerClaveFaltaNoGrave(entrada.tipoFalta)
+      : obtenerClaveFalta(entrada.tipoFalta);
 
   // Función auxiliar para construir datos generales
-  const construirDatosGenerales = servidor => {
+  const construirDatosGenerales = (servidor) => {
     const datos = {
       nombres: servidor?.nombres || null,
       primerApellido: servidor?.primerApellido || null,
@@ -353,7 +375,7 @@ const transformarServidorPublico = (entrada, tipoSalida) => {
     };
 
     // Campos específicos para graves u otro
-    if (tipoSalida === 'graves' || tipoSalida === 'otro') {
+    if (tipoSalida === "graves" || tipoSalida === "otro") {
       resolucion.ordenJurisdiccional = null;
       resolucion.fechaEjecucion = null;
 
@@ -380,7 +402,7 @@ const transformarServidorPublico = (entrada, tipoSalida) => {
       nombreEntePublico: entrada.institucionDependencia?.nombre || null,
       siglasEntePublico: entrada.institucionDependencia?.siglas || null,
       nivelJerarquico: {
-        clave: 'OTRO',
+        clave: "OTRO",
         valor: entrada.servidorPublicoSancionado?.puesto || null,
       },
       denominacion: null,
@@ -414,7 +436,10 @@ const transformarServidorPublico = (entrada, tipoSalida) => {
     ...esquemaBase,
     faltaCometida: [faltaCometidaBase],
     resolucion: construirResolucion(entrada, tipoSalida),
-    tipoSancion: entrada.tipoSancion?.map(sancion => construirTipoSancion(sancion, entrada, tipoSalida)) || [],
+    tipoSancion:
+      entrada.tipoSancion?.map((sancion) =>
+        construirTipoSancion(sancion, entrada, tipoSalida)
+      ) || [],
     observaciones: entrada.observaciones || null,
   };
 
