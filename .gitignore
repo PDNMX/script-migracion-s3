@@ -128,3 +128,9 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Directorio de pruebas del script
+input-data/
+output-data/
+outputDir/
+inputDir/
