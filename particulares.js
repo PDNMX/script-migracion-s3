@@ -1,5 +1,4 @@
-const { formatearMonto } = require('./utils');
-const { entidadFederativaDefault } = require('./constants');
+const { formatearMonto, getEntidadFederativa } = require('./utils');
 
 const mapearTipoSancionParticular = (clave, tipoPersona) => {
   // Implementación de mapearTipoSancionParticular
@@ -182,7 +181,7 @@ const transformarParticular = (entrada, tipoPersona) => {
         coloniaLocalidad: domicilio?.localidad?.valor || null,
         municipioAlcaldia: domicilio?.municipio || null,
         codigoPostal: domicilio?.codigoPostal || null,
-        entidadFederativa: domicilio?.entidadFederativa?.clave || entidadFederativaDefault,
+        entidadFederativa: domicilio?.entidadFederativa?.clave || getEntidadFederativa(),
       };
     }
     return {

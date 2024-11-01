@@ -3,9 +3,9 @@ const {
   procesarPlazoInhabilitacion,
   mapearGenero,
   calcularPlazoSuspension,
+  getEntidadFederativa
 } = require("./utils");
 const {
-  entidadFederativaDefault,
   faltasGraves,
   faltasNoGraves,
 } = require("./constants");
@@ -395,7 +395,7 @@ const transformarServidorPublico = (entrada, tipoSalida) => {
     expediente: entrada.expediente || null,
     datosGenerales: construirDatosGenerales(entrada.servidorPublicoSancionado),
     empleoCargoComision: {
-      entidadFederativa: entidadFederativaDefault || null,
+      entidadFederativa: getEntidadFederativa() || null,
       nivelOrdenGobierno: null,
       ambitoPublico: null,
       nombreEntePublico: entrada.institucionDependencia?.nombre || null,

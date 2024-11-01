@@ -1,6 +1,3 @@
-// Constantes generales del sistema
-const entidadFederativaDefault = "01";
-
 // Definición de tipos de faltas
 const faltasGraves = [
   "COHECHO O EXTORSION",
@@ -25,7 +22,6 @@ const faltasNoGraves = [
 ];
 
 module.exports = {
-  entidadFederativaDefault,
   faltasGraves,
   faltasNoGraves
 };
