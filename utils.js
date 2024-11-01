@@ -12,30 +12,30 @@ const catalogoEntidadesFederativas = {
   '07': 'CHIAPAS',
   '08': 'CHIHUAHUA',
   '09': 'CIUDAD DE MÉXICO',
-  10: 'DURANGO',
-  11: 'GUANAJUATO',
-  12: 'GUERRERO',
-  13: 'HIDALGO',
-  14: 'JALISCO',
-  15: 'MÉXICO',
-  16: 'MICHOACÁN',
-  17: 'MORELOS',
-  18: 'NAYARIT',
-  19: 'NUEVO LEÓN',
-  20: 'OAXACA',
-  21: 'PUEBLA',
-  22: 'QUERÉTARO',
-  23: 'QUINTANA ROO',
-  24: 'SAN LUIS POTOSÍ',
-  25: 'SINALOA',
-  26: 'SONORA',
-  27: 'TABASCO',
-  28: 'TAMAULIPAS',
-  29: 'TLAXCALA',
-  30: 'VERACRUZ',
-  31: 'YUCATÁN',
-  32: 'ZACATECAS',
-  33: 'FEDERACIÓN',
+  '10': 'DURANGO',
+  '11': 'GUANAJUATO',
+  '12': 'GUERRERO',
+  '13': 'HIDALGO',
+  '14': 'JALISCO',
+  '15': 'MÉXICO',
+  '16': 'MICHOACÁN',
+  '17': 'MORELOS',
+  '18': 'NAYARIT',
+  '19': 'NUEVO LEÓN',
+  '20': 'OAXACA',
+  '21': 'PUEBLA',
+  '22': 'QUERÉTARO',
+  '23': 'QUINTANA ROO',
+  '24': 'SAN LUIS POTOSÍ',
+  '25': 'SINALOA',
+  '26': 'SONORA',
+  '27': 'TABASCO',
+  '28': 'TAMAULIPAS',
+  '29': 'TLAXCALA',
+  '30': 'VERACRUZ',
+  '31': 'YUCATÁN',
+  '32': 'ZACATECAS',
+  '33': 'FEDERACIÓN',
 };
 // Función para calcular plazo de suspensión
 const calcularPlazoSuspension = (fechaInicial, fechaFinal) => {
@@ -125,6 +125,8 @@ const getCommandLineArgs = () => {
 
     Catálogo de entidades federativas:
 ${Object.entries(catalogoEntidadesFederativas)
+  .filter(([, nombre]) => nombre !== "FEDERACIÓN")
+  .sort(([, nombreA], [, nombreB]) => nombreA.localeCompare(nombreB))
   .map(([clave, nombre]) => `      ${clave}: ${nombre}`)
   .join('\n')}
   `;

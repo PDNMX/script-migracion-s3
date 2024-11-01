@@ -1,84 +1,103 @@
-# Procesador de Archivos JSON para Sistema de Sanciones
+# Script de Procesamiento de Datos para PDN
 
-## Descripción
-Script de Node.js para procesar y transformar archivos JSON conteniendo información sobre sanciones a servidores públicos y particulares. El script lee archivos JSON de un directorio de entrada, procesa su contenido y genera archivos JSON transformados en un directorio de salida con una estructura específica.
+Este script procesa archivos JSON que contienen información sobre sanciones a servidores públicos y particulares, transformándolos al formato requerido (versión 2 del sistema 3) para su carga en el API de Interconexión a la Plataforma Digital Nacional (PDN).
 
-## Nota importante:
-En caso de que el script no logre clasificar correctamente los registros según el campo `tipoFalta` obtenido del JSON de origen, se almacenarán en un directorio llamado "Otros" y deberán ser revisados y clasificados manualmente por la persona responsable de los datos.
+## 📋 Descripción General
 
-## Requisitos
-- Node.js v22.x o superior
-- Las siguientes bibliotecas nativas de Node.js:
-  - `fs.promises`
-  - `path`
+El script realiza las siguientes operaciones:
+- Lee archivos JSON de un directorio de entrada (incluyendo subdirectorios)
+- Procesa y transforma los datos según el esquema requerido por la PDN
+- Clasifica los registros en:
+  - Servidores Públicos:
+    - Faltas Graves
+    - Faltas No Graves
+    - Otros
+  - Particulares:
+    - Personas Físicas
+    - Personas Morales
+- Genera archivos JSON consolidados por cada categoría en el directorio de salida
 
-## Estructura del Proyecto
+## ⚠️ Advertencias Importantes
+
+> **ATENCIÓN**: Antes de cargar los datos a la PDN, tenga en cuenta lo siguiente:
+
+1. **Registros clasificados como "OTROS"**:
+   - Si se genera un archivo de registros clasificados como "OTROS", estos deben ser revisados y reclasificados manualmente.
+   - La reclasificación debe realizarse según su normatividad aplicable en:
+     - Faltas graves
+     - Faltas no graves
+     - Particulares personas físicas
+     - Particulares personas morales
+
+2. **Ambiente de Pruebas**:
+   - **IMPORTANTE**: Se recomienda SIEMPRE realizar primero las pruebas en un ambiente de desarrollo/pruebas.
+   - Verificar la integridad y correcta clasificación de los datos antes de proceder con el ambiente de producción.
+   - NO cargar datos directamente al ambiente de interconexión de la PDN sin haber realizado pruebas previas.
+
+## 🔧 Requisitos
+
+- Node.js versión 14 o superior
+- Sistema operativo: Windows, Linux o macOS
+- Archivos JSON de entrada con la estructura correcta (array de objetos)
+- Permisos de lectura/escritura en los directorios de entrada y salida
+
+## 📦 Instalación
+
+1. Clonar o descargar el repositorio
+```bash
+git clone [url-del-repositorio]
 ```
-proyecto/
-├── src/
-│   └── processor.js
-├── pruebas/
-│   ├── datos_entrada/
-│   │   └── [archivos JSON de entrada]
-│   └── datos_salida/
-│       ├── SERVIDOR_PUBLICO_SANCIONADO/
-│       │   ├── graves/
-│       │   ├── no_graves/
-│       │   └── otro/
-│       └── PARTICULAR_SANCIONADO/
-│           ├── fisica/
-│           └── moral/
-└── README.md
+
+2. Navegar al directorio del proyecto
+```bash
+cd [nombre-del-directorio]
 ```
 
-## Configuración
-Antes de ejecutar el script, es necesario configurar las siguientes variables en el archivo `processor.js`:
-
-```javascript
-// Rutas de directorios
-const inputDir = "../pruebas/datos_entrada/";  // Directorio donde se encuentran los archivos JSON a procesar
-const outputDir = "../pruebas/datos_salida/";  // Directorio donde se guardarán los archivos procesados
-
-// Configuración de entidad federativa
-const entidadFederativaDefault = "01";  // Código de la entidad federativa (ajustar según corresponda)
+3. Instalar dependencias (si las hubiera)
+```bash
+npm install
 ```
 
-Asegúrese de ajustar estas variables según sus necesidades:
-- Las rutas de directorios deben corresponder a la estructura de su proyecto
-- El código de entidad federativa debe corresponder al estado o entidad que está procesando
+## 🚀 Uso
 
-## Uso
-1. Clone el repositorio:
-   ```bash
-   git clone [URL del repositorio]
-   ```
+El script se ejecuta desde la línea de comandos con los siguientes parámetros:
 
-2. Configure las variables mencionadas en la sección anterior.
+```bash
+node script.js --input <directorio-entrada> --output <directorio-salida> --entidad <clave-entidad>
+```
 
-3. Coloque los archivos JSON a procesar en el directorio de entrada configurado.
+### Parámetros:
+- `--input`: Directorio donde se encuentran los archivos JSON a procesar
+- `--output`: Directorio donde se guardarán los archivos procesados
+- `--entidad`: Clave de la entidad federativa (dos dígitos)
 
-4. Ejecute el script:
-   ```bash
-   node processor.js
-   ```
+### Ejemplo:
+```bash
+node script.js --input "./datos_entrada" --output "./datos_salida" --entidad 01
+```
 
-El script procesará todos los archivos JSON encontrados en el directorio de entrada y sus subdirectorios, generando los archivos transformados en el directorio de salida.
+## 📄 Archivos de Salida
 
-## Estructura de Salida
-Los archivos procesados se organizarán en la siguiente estructura:
+El script generará los siguientes archivos en el directorio de salida:
+- `faltas_graves.json`: Servidores públicos con faltas graves
+- `faltas_no_graves.json`: Servidores públicos con faltas no graves
+- `faltas_otros.json`: Registros que requieren clasificación manual
+- `particulares_personas_fisicas.json`: Sanciones a personas físicas
+- `particulares_personas_morales.json`: Sanciones a personas morales
 
-- `SERVIDOR_PUBLICO_SANCIONADO/`
-  - `graves/`: Sanciones graves de servidores públicos
-  - `no_graves/`: Sanciones no graves de servidores públicos
-  - `otro/`: Otras sanciones de servidores públicos
-- `PARTICULAR_SANCIONADO/`
-  - `fisica/`: Sanciones a personas físicas
-  - `moral/`: Sanciones a personas morales
+## 🔍 Verificación de Datos
 
-## Notas
-- Los archivos de salida seguirán el patrón de nombre: `procesado_[directorio_padre]_[nombre_archivo].json`
-- El script creará automáticamente los directorios necesarios si no existen
-- Se manejan errores de procesamiento por archivo, permitiendo que el script continúe con los demás archivos en caso de error
+Antes de proceder con la carga en la PDN, se recomienda:
 
-## Licencia
-GNU General Public License v3.0 (GPLv3)
+1. Revisar los archivos generados para asegurar que la clasificación es correcta
+2. Verificar que los datos cumplen con el esquema requerido por la PDN
+3. Validar que los montos, fechas y demás campos críticos se hayan procesado correctamente
+4. Reclasificar manualmente los registros en el archivo `faltas_otros.json`
+
+## 🐛 Solución de Problemas
+
+El script mostrará mensajes de error en caso de:
+- Archivos JSON mal formados
+- Directorios inexistentes o sin permisos
+- Claves de entidad federativa inválidas
+- Errores en el procesamiento de registros individuales
