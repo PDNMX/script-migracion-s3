@@ -34,7 +34,28 @@ El script realiza las siguientes operaciones:
    - **IMPORTANTE**: Se recomienda SIEMPRE realizar primero las pruebas en un ambiente de desarrollo/pruebas.
    - Verificar la integridad y correcta clasificación de los datos antes de proceder con el ambiente de producción.
    - NO cargar datos directamente al ambiente de interconexión de la PDN sin haber realizado pruebas previas.
-
+     
+3. **Proceso de Clasificación de Particulares**:
+   * La clasificación de particulares sigue el siguiente orden de prioridad:
+      1. Por campo `tipoPersona`: 
+         * Si es "F" → persona física
+         * Si es "M" → persona moral
+      2. Por razón social, verificando contra el siguiente catálogo de indicadores:
+         * S.A. / SA
+         * S.A. DE C.V. / SA DE CV
+         * S. DE R.L. / SRL
+         * S. DE R.L. DE C.V.
+         * S. EN C.
+         * S. EN N.C.
+         * S.N.C.
+         * SOCIEDAD ANÓNIMA
+         * ASOCIACIÓN CIVIL / A.C.
+         * S.C.
+         * S.A.P.I.
+         * S.A.B.
+      * Si contiene alguno de estos indicadores → persona moral
+      * Si no contiene indicadores y tiene al menos dos palabras → persona física
+      * Si no cumple ninguna condición → requiere revisión manual
 ## 🔧 Requisitos
 
 - Node.js versión 14 o superior
