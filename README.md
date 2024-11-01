@@ -1,6 +1,6 @@
-# Script de Procesamiento de Datos para PDN
+# Script de transformación/migración de Datos para el Sistema 3 de la PDN
 
-Este script procesa archivos JSON que contienen información sobre sanciones a servidores públicos y particulares, transformándolos al formato requerido (versión 2 del sistema 3) para su carga en el API de Interconexión a la Plataforma Digital Nacional (PDN).
+Este script procesa archivos JSON que contienen información sobre sanciones a servidores públicos y particulares (sistema 3), transformándolos al formato nuevo requerido (versión 2) para su interconexón con la Plataforma Digital Nacional (PDN).
 
 ## 📋 Descripción General
 
@@ -15,7 +15,8 @@ El script realiza las siguientes operaciones:
   - Particulares:
     - Personas Físicas
     - Personas Morales
-- Genera archivos JSON consolidados por cada categoría en el directorio de salida
+- Genera archivos JSON consolidados por cada categoría
+- Proporciona estadísticas detalladas del procesamiento
 
 ## ⚠️ Advertencias Importantes
 
@@ -53,11 +54,6 @@ git clone [url-del-repositorio]
 cd [nombre-del-directorio]
 ```
 
-3. Instalar dependencias (si las hubiera)
-```bash
-npm install
-```
-
 ## 🚀 Uso
 
 El script se ejecuta desde la línea de comandos con los siguientes parámetros:
@@ -76,6 +72,65 @@ node script.js --input <directorio-entrada> --output <directorio-salida> --entid
 node script.js --input "./datos_entrada" --output "./datos_salida" --entidad 01
 ```
 
+## 📊 Salida del Script
+
+Durante la ejecución, el script mostrará:
+
+1. **Información Inicial**:
+```
+Iniciando procesamiento...
+Directorio de entrada: ./datos_entrada
+Directorio de salida: ./datos_salida
+
+Procesando archivos...
+```
+
+2. **Progreso de Procesamiento**:
+```
+Procesando archivo: ./datos_entrada/archivo1.json ✓
+Procesando archivo: ./datos_entrada/archivo2.json ✓
+```
+
+3. **Resumen Final**:
+```
+============================================
+           RESUMEN DE PROCESAMIENTO
+============================================
+
+📥 DATOS DE ENTRADA:
+--------------------------------------------
+Archivos procesados: X
+Registros totales encontrados: X
+├── Servidores públicos: X
+├── Particulares: X
+└── No válidos/con errores: X
+
+📤 CLASIFICACIÓN DE SALIDA:
+--------------------------------------------
+Servidores Públicos:
+├── Faltas graves: X
+├── Faltas no graves: X
+└── Otros: X
+
+Particulares:
+├── Personas físicas: X
+└── Personas morales: X
+
+📊 TOTALES:
+--------------------------------------------
+Total registros válidos de entrada: X
+Total registros procesados: X
+```
+
+4. **Advertencia** (si aplica):
+```
+⚠️  ADVERTENCIA ⚠️
+--------------------------------------------
+Se encontraron X registros clasificados como "OTROS"
+Estos registros requieren revisión y clasificación manual
+según su normatividad aplicable.
+```
+
 ## 📄 Archivos de Salida
 
 El script generará los siguientes archivos en el directorio de salida:
@@ -89,15 +144,22 @@ El script generará los siguientes archivos en el directorio de salida:
 
 Antes de proceder con la carga en la PDN, se recomienda:
 
-1. Revisar los archivos generados para asegurar que la clasificación es correcta
-2. Verificar que los datos cumplen con el esquema requerido por la PDN
-3. Validar que los montos, fechas y demás campos críticos se hayan procesado correctamente
-4. Reclasificar manualmente los registros en el archivo `faltas_otros.json`
+1. Revisar el resumen de procesamiento para verificar que los números coincidan con lo esperado
+2. Prestar especial atención a:
+   - Registros no válidos o con errores
+   - Registros clasificados como "OTROS"
+   - Total de registros procesados vs. total de entrada
+3. Verificar que los datos en los archivos de salida cumplan con el esquema requerido
+4. Realizar la reclasificación manual de registros en "OTROS" si existen
 
 ## 🐛 Solución de Problemas
 
-El script mostrará mensajes de error en caso de:
+El script mostrará mensajes de error detallados en caso de:
 - Archivos JSON mal formados
 - Directorios inexistentes o sin permisos
-- Claves de entidad federativa inválidas
 - Errores en el procesamiento de registros individuales
+- Claves de entidad federativa inválidas
+
+## ⚖️ Notas Legales
+
+Este script es una herramienta de apoyo para el procesamiento de datos. La responsabilidad de la correcta clasificación y veracidad de los datos recae en la institución que los reporta.
