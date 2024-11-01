@@ -2,7 +2,7 @@ const {
   formatearMonto,
   procesarPlazoInhabilitacion,
   mapearGenero,
-  calcularPlazoSuspension, 
+  calcularPlazoSuspension,
 } = require("./utils");
 const {
   entidadFederativaDefault,
@@ -173,31 +173,30 @@ const obtenerClaveFaltaNoGrave = (tipoFalta) => {
 };
 
 const mapearTipoSancion = (clave, tipoEsquema) => {
-  // Implementación de mapearTipoSancion
   // Mapeo del catálogo original a los nuevos valores
-  const mapeoFisicas = {
+  const mapeoGraves = {
     I: "INHABILITACION",
-    IND: "INDEMNIZACION",
     SE: "SANCION_ECONOMICA",
+    S: "SUSPENSION",
+    D: "DESTITUCION",
     M: "SANCION_ECONOMICA",
+    IRSC: "SANCION_ECONOMICA",
     O: "OTRO",
   };
 
-  const mapeoMorales = {
+  const mapeoNoGraves = {
     I: "INHABILITACION",
-    IND: "INDEMNIZACION",
-    SE: "SANCION_ECONOMICA",
-    M: "SANCION_ECONOMICA",
-    S: "SUSPENSION_ACTIVIDADES",
-    D: "DISOLUCION_SOCIEDAD",
+    S: "SUSPENSION",
+    D: "DESTITUCION",
+    A: "AMONESTACION",
     O: "OTRO",
   };
 
   // Normalizar la clave de entrada
-  const claveNormalizada = clave.toUpperCase();
+  const claveNormalizada = clave?.toUpperCase() || "O";
 
-  // Seleccionar el mapeo según el tipo de persona
-  const mapeo = tipoPersona === "fisica" ? mapeoFisicas : mapeoMorales;
+  // Seleccionar el mapeo según el tipo de esquema
+  const mapeo = tipoEsquema === "no_graves" ? mapeoNoGraves : mapeoGraves;
 
   // Retornar el valor mapeado o OTRO si no hay coincidencia
   return mapeo[claveNormalizada] || "OTRO";
