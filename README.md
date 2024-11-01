@@ -59,7 +59,7 @@ cd [nombre-del-directorio]
 El script se ejecuta desde la línea de comandos con los siguientes parámetros:
 
 ```bash
-node script.js --input <directorio-entrada> --output <directorio-salida> --entidad <clave-entidad>
+node index.js --input <directorio-entrada> --output <directorio-salida> --entidad <clave-entidad>
 ```
 
 ### Parámetros:
@@ -69,7 +69,7 @@ node script.js --input <directorio-entrada> --output <directorio-salida> --entid
 
 ### Ejemplo:
 ```bash
-node script.js --input "./datos_entrada" --output "./datos_salida" --entidad 01
+node index.js --input "./datos_entrada" --output "./datos_salida" --entidad 01
 ```
 
 ## 📊 Salida del Script
