@@ -14,6 +14,7 @@ let registrosAcumulados = {
   PARTICULAR_SANCIONADO: {
     fisica: [],
     moral: [],
+    otro: [],
   },
 };
 
@@ -35,18 +36,18 @@ const stats = {
     PARTICULAR_SANCIONADO: {
       fisica: 0,
       moral: 0,
+      otro: 0,
     },
   },
 };
 
 async function procesarArchivo(rutaArchivo) {
   try {
-    console.log(`Procesando archivo: ${rutaArchivo}`);
-
     if (!(await Utils.validarArchivosJSON(rutaArchivo))) {
       return;
     }
 
+    console.log(`Procesando archivo: ${rutaArchivo}`);
     const contenido = await fs.readFile(rutaArchivo, "utf8");
     let datos = JSON.parse(contenido);
     const registros = Array.isArray(datos) ? datos : [datos];
@@ -91,24 +92,24 @@ async function procesarArchivo(rutaArchivo) {
           console.log(`- Tipo declarado: ${tipoPersona || "No proporcionado"}`);
           console.log(`- RFC: ${rfc || "No proporcionado"}`);
 
-          const categoria = Utils.determinarTipoPersona({
+          const tipoPersonaResultado = Utils.determinarTipoPersona({
             nombreRazonSocial,
             tipoPersona,
             rfc,
           });
 
-          if (categoria) {
-            const datosTransformados =
-              ParticularesProcesador.transformarParticular(registro, categoria);
-            registrosAcumulados.PARTICULAR_SANCIONADO[categoria].push(
-              datosTransformados
+          const categoriaFinal = tipoPersonaResultado || "otro";
+          const datosTransformados =
+            ParticularesProcesador.transformarParticular(
+              registro,
+              categoriaFinal
             );
-            stats.salida.PARTICULAR_SANCIONADO[categoria]++;
-            console.log(`✓ Registro procesado como persona ${categoria}`);
-          } else {
-            stats.entrada.registrosNoValidos++;
-            console.warn("❌ No se pudo determinar el tipo de persona");
-          }
+
+          registrosAcumulados.PARTICULAR_SANCIONADO[categoriaFinal].push(
+            datosTransformados
+          );
+          stats.salida.PARTICULAR_SANCIONADO[categoriaFinal]++;
+          console.log(`✓ Registro procesado como persona ${categoriaFinal}`);
         } else {
           stats.entrada.registrosNoValidos++;
           console.warn(
@@ -159,10 +160,11 @@ async function escribirArchivosConsolidados(outputDir) {
         registrosAcumulados.PARTICULAR_SANCIONADO.fisica,
       "particulares_personas_morales.json":
         registrosAcumulados.PARTICULAR_SANCIONADO.moral,
+      "particulares_otros.json": registrosAcumulados.PARTICULAR_SANCIONADO.otro, // Agregar nuevo archivo
     };
 
     for (const [nombreArchivo, registros] of Object.entries(archivos)) {
-      if (registros.length > 0) {
+      if (registros && registros.length > 0) {
         const rutaArchivo = path.join(outputDir, nombreArchivo);
         await fs.writeFile(rutaArchivo, JSON.stringify(registros, null, 2));
         console.log(
@@ -208,8 +210,9 @@ function mostrarResumenProcesamiento() {
     `├── Personas físicas: ${stats.salida.PARTICULAR_SANCIONADO.fisica}`
   );
   console.log(
-    `└── Personas morales: ${stats.salida.PARTICULAR_SANCIONADO.moral}`
+    `├── Personas morales: ${stats.salida.PARTICULAR_SANCIONADO.moral}`
   );
+  console.log(`└── Otros: ${stats.salida.PARTICULAR_SANCIONADO.otro}`);
 
   const totalEntrada =
     stats.entrada.registrosServidores + stats.entrada.registrosParticulares;
@@ -236,6 +239,15 @@ function mostrarResumenProcesamiento() {
     );
     console.log("Estos registros requieren revisión y clasificación manual");
     console.log("según su normatividad aplicable.");
+  }
+  if (stats.salida.PARTICULAR_SANCIONADO.otro > 0) {
+    console.log("\n⚠️  ADVERTENCIA - PARTICULARES SIN CLASIFICAR ⚠️");
+    console.log("--------------------------------------------");
+    console.log(
+      `Se encontraron ${stats.salida.PARTICULAR_SANCIONADO.otro} registros de particulares sin clasificación clara`
+    );
+    console.log("Estos registros requieren revisión y clasificación manual");
+    console.log("entre personas físicas y morales.");
   }
 
   console.log("\n============================================");
