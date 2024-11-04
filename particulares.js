@@ -242,10 +242,25 @@ const transformarParticular = (entrada, tipoPersona) => {
     return resolucion;
   };
 
+  const origenProcedimiento = {
+    clave: null,
+    valor: null,
+  };
+
+  const dondeCometioLaFalta = {
+    entidadFederativa: null,
+    nivelOrdenGobierno: null,
+    ambitoPublico: null,
+    nombreEntePublico: entrada.institucionDependencia?.nombre || null,
+    siglasEntePublico: entrada.institucionDependencia?.siglas || null,
+  };
+
   const datosBase = {
     fecha: entrada.fechaCaptura || null,
     expediente: entrada.expediente || null,
+    origenProcedimiento,
     faltaCometida: [procesarTipoFalta(entrada.tipoFalta)],
+    dondeCometioLaFalta,
     resolucion: construirResolucion(entrada),
     tipoSancion:
       entrada.tipoSancion?.map((sancion) =>
