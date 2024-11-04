@@ -35,27 +35,57 @@ El script realiza las siguientes operaciones:
    - Verificar la integridad y correcta clasificación de los datos antes de proceder con el ambiente de producción.
    - NO cargar datos directamente al ambiente de interconexión de la PDN sin haber realizado pruebas previas.
      
-3. **Proceso de Clasificación de Particulares**:
-   * La clasificación de particulares sigue el siguiente orden de prioridad:
-      1. Por campo `tipoPersona`: 
-         * Si es "F" → persona física
-         * Si es "M" → persona moral
-      2. Por razón social, verificando contra el siguiente catálogo de indicadores:
-         * S.A. / SA
-         * S.A. DE C.V. / SA DE CV
-         * S. DE R.L. / SRL
-         * S. DE R.L. DE C.V.
-         * S. EN C.
-         * S. EN N.C.
-         * S.N.C.
-         * SOCIEDAD ANÓNIMA
-         * ASOCIACIÓN CIVIL / A.C.
-         * S.C.
-         * S.A.P.I.
-         * S.A.B.
-      * Si contiene alguno de estos indicadores → persona moral
-      * Si no contiene indicadores y tiene al menos dos palabras → persona física
-      * Si no cumple ninguna condición → requiere revisión manual
+Proceso de Clasificación de Particulares:
+
+La clasificación de particulares sigue un orden jerárquico estricto, pasando a la siguiente validación solo si la anterior no fue exitosa:
+
+Primera validación - Por campo tipoPersona:
+
+Si es "F" → persona física
+Si es "M" → persona moral
+Si no está definido o es "Dato no proporcionado" → pasa a siguiente validación
+
+
+Segunda validación - Por RFC (si la primera no fue exitosa):
+
+Si tiene 13 caracteres y cumple la estructura → persona física
+Si tiene 12 caracteres y cumple la estructura → persona moral
+Si el RFC no está presente o no es válido → pasa a siguiente validación
+
+
+Tercera validación - Por razón social (si las anteriores no fueron exitosas):
+
+Verifica contra el catálogo de indicadores de persona moral:
+
+S.A. / SA
+S.A. DE C.V. / SA DE CV
+S. DE R.L. / SRL
+S. DE R.L. DE C.V.
+S. EN C.
+S. EN N.C.
+S.N.C.
+SOCIEDAD ANÓNIMA
+ASOCIACIÓN CIVIL / A.C.
+S.C.
+S.A.P.I.
+S.A.B.
+
+
+Si contiene alguno de estos indicadores → persona moral
+Si no contiene indicadores pero tiene estructura de nombre (dos o más palabras) → persona física
+
+
+Clasificación final:
+
+Si ninguna validación fue exitosa → se clasifica como "otro" y requiere revisión manual
+Cada registro solo pasa a la siguiente validación si la anterior no pudo determinar el tipo
+El proceso se detiene en cuanto se determina el tipo en cualquier nivel
+
+
+
+
+IMPORTANTE: Los registros clasificados como "otro" deben ser revisados y reclasificados manualmente antes de su carga en la PDN.
+
 ## 🔧 Requisitos
 
 - Node.js versión 14 o superior
