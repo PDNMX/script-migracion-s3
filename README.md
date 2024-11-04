@@ -2,6 +2,18 @@
 
 Este script procesa archivos JSON que contienen información sobre sanciones a servidores públicos y particulares (sistema 3), transformándolos al formato nuevo requerido (versión 2) para su interconexón con la Plataforma Digital Nacional (PDN).
 
+## Tabla de Contenidos
+- [📋 Descripción General](#-descripción-general)
+- [⚠️ Advertencias Importantes](#️-advertencias-importantes)
+- [🔧 Requisitos](#-requisitos)
+- [📦 Instalación](#-instalación)
+- [🚀 Uso](#-uso)
+- [📊 Salida del Script](#-salida-del-script)
+- [📄 Archivos de Salida](#-archivos-de-salida)
+- [🔍 Verificación de Datos](#-verificación-de-datos)
+- [🐛 Solución de Problemas](#-solución-de-problemas)
+- [⚖️ Notas Legales](#️-notas-legales)
+
 ## 📋 Descripción General
 
 El script realiza las siguientes operaciones:
@@ -22,41 +34,36 @@ El script realiza las siguientes operaciones:
 
 > **ATENCIÓN**: Antes de cargar los datos a la PDN, tenga en cuenta lo siguiente:
 
-1. **Registros clasificados como "OTROS"**:
-   - Si se genera un archivo de registros clasificados como "OTROS", estos deben ser revisados y reclasificados manualmente.
-   - La reclasificación debe realizarse según su normatividad aplicable en:
-     - Faltas graves
-     - Faltas no graves
-     - Particulares personas físicas
-     - Particulares personas morales
+### 1. Registros clasificados como "OTROS"
+- Si se genera un archivo de registros clasificados como "OTROS", estos deben ser revisados y reclasificados manualmente.
+- La reclasificación debe realizarse según su normatividad aplicable en:
+  - Faltas graves
+  - Faltas no graves
+  - Particulares personas físicas
+  - Particulares personas morales
 
-2. **Ambiente de Pruebas**:
-   - **IMPORTANTE**: Se recomienda SIEMPRE realizar primero las pruebas en un ambiente de desarrollo/pruebas.
-   - Verificar la integridad y correcta clasificación de los datos antes de proceder con el ambiente de producción.
-   - NO cargar datos directamente al ambiente de interconexión de la PDN sin haber realizado pruebas previas.
-     
-Proceso de Clasificación de Particulares:
+### 2. Ambiente de Pruebas
+- **IMPORTANTE**: Se recomienda SIEMPRE realizar primero las pruebas en un ambiente de desarrollo/pruebas.
+- Verificar la integridad y correcta clasificación de los datos antes de proceder con el ambiente de producción.
+- NO cargar datos directamente al ambiente de interconexión de la PDN sin haber realizado pruebas previas.
 
-La clasificación de particulares sigue un orden jerárquico estricto, pasando a la siguiente validación solo si la anterior no fue exitosa:
+### 3. Proceso de Clasificación de Particulares
 
-Primera validación - Por campo tipoPersona:
+La clasificación sigue un orden jerárquico estricto, pasando a la siguiente validación solo si la anterior no fue exitosa:
 
-Si es "F" → persona física
-Si es "M" → persona moral
-Si no está definido o es "Dato no proporcionado" → pasa a siguiente validación
+#### Primera validación - Por campo tipoPersona
+- Si es "F" → persona física
+- Si es "M" → persona moral
+- Si no está definido o es "Dato no proporcionado" → pasa a siguiente validación
 
+#### Segunda validación - Por RFC
+- Si tiene 13 caracteres y cumple la estructura → persona física
+- Si tiene 12 caracteres y cumple la estructura → persona moral
+- Si el RFC no está presente o no es válido → pasa a siguiente validación
 
-Segunda validación - Por RFC (si la primera no fue exitosa):
-
-Si tiene 13 caracteres y cumple la estructura → persona física
-Si tiene 12 caracteres y cumple la estructura → persona moral
-Si el RFC no está presente o no es válido → pasa a siguiente validación
-
-
-Tercera validación - Por razón social (si las anteriores no fueron exitosas):
-
+#### Tercera validación - Por razón social
 Verifica contra el catálogo de indicadores de persona moral:
-
+```
 S.A. / SA
 S.A. DE C.V. / SA DE CV
 S. DE R.L. / SRL
@@ -69,22 +76,17 @@ ASOCIACIÓN CIVIL / A.C.
 S.C.
 S.A.P.I.
 S.A.B.
+```
 
+- Si contiene alguno de estos indicadores → persona moral
+- Si no contiene indicadores pero tiene estructura de nombre (dos o más palabras) → persona física
 
-Si contiene alguno de estos indicadores → persona moral
-Si no contiene indicadores pero tiene estructura de nombre (dos o más palabras) → persona física
+#### Clasificación final
+- Si ninguna validación fue exitosa → se clasifica como "otro" y requiere revisión manual
+- Cada registro solo pasa a la siguiente validación si la anterior no pudo determinar el tipo
+- El proceso se detiene en cuanto se determina el tipo en cualquier nivel
 
-
-Clasificación final:
-
-Si ninguna validación fue exitosa → se clasifica como "otro" y requiere revisión manual
-Cada registro solo pasa a la siguiente validación si la anterior no pudo determinar el tipo
-El proceso se detiene en cuanto se determina el tipo en cualquier nivel
-
-
-
-
-IMPORTANTE: Los registros clasificados como "otro" deben ser revisados y reclasificados manualmente antes de su carga en la PDN.
+> **IMPORTANTE**: Los registros clasificados como "otro" deben ser revisados y reclasificados manualmente antes de su carga en la PDN.
 
 ## 🔧 Requisitos
 
@@ -127,7 +129,7 @@ node index.js --input "./datos_entrada" --output "./datos_salida" --entidad 01
 
 Durante la ejecución, el script mostrará:
 
-1. **Información Inicial**:
+### 1. Información Inicial:
 ```
 Iniciando procesamiento...
 Directorio de entrada: ./datos_entrada
@@ -136,13 +138,13 @@ Directorio de salida: ./datos_salida
 Procesando archivos...
 ```
 
-2. **Progreso de Procesamiento**:
+### 2. Progreso de Procesamiento:
 ```
 Procesando archivo: ./datos_entrada/archivo1.json ✓
 Procesando archivo: ./datos_entrada/archivo2.json ✓
 ```
 
-3. **Resumen Final**:
+### 3. Resumen Final:
 ```
 ============================================
            RESUMEN DE PROCESAMIENTO
@@ -173,7 +175,7 @@ Total registros válidos de entrada: X
 Total registros procesados: X
 ```
 
-4. **Advertencia** (si aplica):
+### 4. Advertencia (si aplica):
 ```
 ⚠️  ADVERTENCIA ⚠️
 --------------------------------------------
