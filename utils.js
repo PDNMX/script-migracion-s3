@@ -26,22 +26,70 @@ const INDICADORES_PERSONA_MORAL = [
  * @param {string} params.rfc - RFC si está disponible
  * @returns {string|null} 'fisica', 'moral' o null
  */
+/**
+ * Determina el tipo de persona utilizando múltiples criterios en orden jerárquico
+ * @param {Object} params - Parámetros para determinar el tipo
+ * @param {string} params.nombreRazonSocial - Nombre o razón social
+ * @param {string} params.tipoPersona - Tipo declarado (F o M)
+ * @param {string} [params.rfc] - RFC (opcional)
+ * @returns {string} 'fisica', 'moral' u 'otro'
+ */
 const determinarTipoPersona = ({ nombreRazonSocial, tipoPersona, rfc }) => {
   console.log("\nProceso de determinación de tipo:");
 
-  // 1. Primero verificar por tipoPersona (prioridad más alta)
+  // 1. Primera validación: por tipoPersona
   if (tipoPersona && tipoPersona !== "Dato no proporcionado") {
-    if (tipoPersona === "F") {
+    const tipoNormalizado = tipoPersona.trim().toUpperCase();
+    if (tipoNormalizado === "F") {
       console.log("✓ Determinado como persona física por tipo declarado");
       return "fisica";
     }
-    if (tipoPersona === "M") {
+    if (tipoNormalizado === "M") {
       console.log("✓ Determinado como persona moral por tipo declarado");
       return "moral";
     }
   }
+  console.log(
+    "→ No se pudo determinar por tipoPersona, intentando siguiente método"
+  );
 
-  // 2. Verificar por nombreRazonSocial
+  // 2. Segunda validación: por RFC (solo si está disponible)
+  if (rfc) {
+    const rfcLimpio = rfc.trim().toUpperCase();
+
+    // Validar RFC persona física
+    const regexPersonaFisica = /^[A-ZÑ&]{4}[0-9]{6}[A-Z0-9]{3}$/;
+    if (rfcLimpio.length === 13 && regexPersonaFisica.test(rfcLimpio)) {
+      // Validar que la fecha sea válida
+      const mes = parseInt(rfcLimpio.substr(6, 2));
+      const dia = parseInt(rfcLimpio.substr(8, 2));
+
+      if (mes >= 1 && mes <= 12 && dia >= 1 && dia <= 31) {
+        console.log("✓ Determinado como persona física por estructura del RFC");
+        return "fisica";
+      }
+    }
+
+    // Validar RFC persona moral
+    const regexPersonaMoral = /^[A-ZÑ&]{3}[0-9]{6}[A-Z0-9]{3}$/;
+    if (rfcLimpio.length === 12 && regexPersonaMoral.test(rfcLimpio)) {
+      // Validar que la fecha sea válida
+      const mes = parseInt(rfcLimpio.substr(5, 2));
+      const dia = parseInt(rfcLimpio.substr(7, 2));
+
+      if (mes >= 1 && mes <= 12 && dia >= 1 && dia <= 31) {
+        console.log("✓ Determinado como persona moral por estructura del RFC");
+        return "moral";
+      }
+    }
+    console.log(
+      "→ RFC presente pero no válido para determinación, intentando siguiente método"
+    );
+  } else {
+    console.log("→ RFC no disponible, intentando siguiente método");
+  }
+
+  // 3. Tercera validación: por nombreRazonSocial
   if (nombreRazonSocial) {
     const nombreNormalizado = nombreRazonSocial
       .toUpperCase()
@@ -66,23 +114,16 @@ const determinarTipoPersona = ({ nombreRazonSocial, tipoPersona, rfc }) => {
       );
       return "fisica";
     }
+    console.log("→ No se pudo determinar por nombreRazonSocial");
+  } else {
+    console.log("→ nombreRazonSocial no disponible");
   }
 
-  // 3. Verificar por RFC (si está disponible)
-  if (rfc) {
-    const rfcLimpio = rfc.trim().toUpperCase();
-    if (rfcLimpio.length === 13) {
-      console.log("✓ Determinado como persona física por RFC");
-      return "fisica";
-    }
-    if (rfcLimpio.length === 12) {
-      console.log("✓ Determinado como persona moral por RFC");
-      return "moral";
-    }
-  }
-
-  console.log("✗ No se pudo determinar el tipo de persona");
-  return null;
+  // Si ningún método pudo determinar el tipo, clasificar como "otro"
+  console.log(
+    "✗ No se pudo determinar el tipo de persona, clasificando como 'otro'"
+  );
+  return "otro";
 };
 
 // Catálogo de entidades federativas
