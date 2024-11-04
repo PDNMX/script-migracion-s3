@@ -1,68 +1,75 @@
-const { formatearMonto, getEntidadFederativa } = require('./utils');
+const {
+  formatearMonto,
+  getEntidadFederativa,
+  procesarPlazoInhabilitacion,
+} = require("./utils");
 
 const mapearTipoSancionParticular = (clave, tipoPersona) => {
   // Implementación de mapearTipoSancionParticular
   // Mapeo del catálogo original a los nuevos valores
   const mapeoFisicas = {
-    I: 'INHABILITACION',
-    IND: 'INDEMNIZACION',
-    SE: 'SANCION_ECONOMICA',
-    M: 'SANCION_ECONOMICA',
-    O: 'OTRO',
+    I: "INHABILITACION",
+    IND: "INDEMNIZACION",
+    SE: "SANCION_ECONOMICA",
+    M: "SANCION_ECONOMICA",
+    O: "OTRO",
   };
 
   const mapeoMorales = {
-    I: 'INHABILITACION',
-    IND: 'INDEMNIZACION',
-    SE: 'SANCION_ECONOMICA',
-    M: 'SANCION_ECONOMICA',
-    S: 'SUSPENSION_ACTIVIDADES',
-    D: 'DISOLUCION_SOCIEDAD',
-    O: 'OTRO',
+    I: "INHABILITACION",
+    IND: "INDEMNIZACION",
+    SE: "SANCION_ECONOMICA",
+    M: "SANCION_ECONOMICA",
+    S: "SUSPENSION_ACTIVIDADES",
+    D: "DISOLUCION_SOCIEDAD",
+    O: "OTRO",
   };
 
   // Normalizar la clave de entrada
   const claveNormalizada = clave.toUpperCase();
 
   // Seleccionar el mapeo según el tipo de persona
-  const mapeo = tipoPersona === 'fisica' ? mapeoFisicas : mapeoMorales;
+  const mapeo = tipoPersona === "fisica" ? mapeoFisicas : mapeoMorales;
 
   // Retornar el valor mapeado o OTRO si no hay coincidencia
-  return mapeo[claveNormalizada] || 'OTRO';
+  return mapeo[claveNormalizada] || "OTRO";
 };
 
 const mapearClaveFaltaParticular = (claveOriginal, tipoPersona) => {
   // Implementación de mapearClaveFaltaParticular
   // Mapeo del catálogo original a los nuevos valores
   const mapeoFisicas = {
-    I: 'INHABILITACION',
-    M: 'SANCION_ECONOMICA',
-    SE: 'SANCION_ECONOMICA',
-    IND: 'INDEMNIZACION',
+    I: "INHABILITACION",
+    M: "SANCION_ECONOMICA",
+    SE: "SANCION_ECONOMICA",
+    IND: "INDEMNIZACION",
   };
 
   const mapeoMorales = {
-    I: 'INHABILITACION',
-    M: 'SANCION_ECONOMICA',
-    SE: 'SANCION_ECONOMICA',
-    IND: 'INDEMNIZACION',
-    S: 'SUSPENSION_ACTIVIDADES',
-    D: 'DISOLUCION_SOCIEDAD',
+    I: "INHABILITACION",
+    M: "SANCION_ECONOMICA",
+    SE: "SANCION_ECONOMICA",
+    IND: "INDEMNIZACION",
+    S: "SUSPENSION_ACTIVIDADES",
+    D: "DISOLUCION_SOCIEDAD",
   };
 
   // Normalizar la clave de entrada
   const claveNormalizada = claveOriginal?.toUpperCase() || null;
 
   // Seleccionar el mapeo según el tipo de persona
-  const mapeo = tipoPersona === 'fisica' ? mapeoFisicas : mapeoMorales;
+  const mapeo = tipoPersona === "fisica" ? mapeoFisicas : mapeoMorales;
 
   // Retornar el valor mapeado o OTRO si no hay coincidencia
-  return mapeo[claveNormalizada] || 'OTRO';
+  return mapeo[claveNormalizada] || "OTRO";
 };
 
 const construirTipoSancionParticular = (sancion, entrada, tipoPersona) => {
   // Implementación de construirTipoSancionParticular
-  const claveMapeada = mapearTipoSancionParticular(sancion.clave || null, tipoPersona);
+  const claveMapeada = mapearTipoSancionParticular(
+    sancion.clave || null,
+    tipoPersona
+  );
 
   const sancionBase = {
     clave: claveMapeada,
@@ -70,17 +77,26 @@ const construirTipoSancionParticular = (sancion, entrada, tipoPersona) => {
 
   // Construir objeto según tipo de sanción
   switch (claveMapeada) {
-    case 'INHABILITACION':
-      sancionBase.inhabilitacion = {
-        plazoAnios: null,
-        plazoMeses: null,
-        plazoDias: null,
-        fechaInicial: entrada.inhabilitacion?.fechaInicial || null,
-        fechaFinal: entrada.inhabilitacion?.fechaFinal || null,
-      };
+    case "INHABILITACION":
+      if (
+        entrada.inhabilitacion?.plazo ||
+        entrada.inhabilitacion?.fechaInicial ||
+        entrada.inhabilitacion?.fechaFinal
+      ) {
+        const plazos = entrada.inhabilitacion?.plazo
+          ? procesarPlazoInhabilitacion(entrada.inhabilitacion.plazo)
+          : { anios: null, meses: null, dias: null };
+        sancionBase.inhabilitacion = {
+          plazoAnios: plazos.anios,
+          plazoMeses: plazos.meses,
+          plazoDias: plazos.dias,
+          fechaInicial: entrada.inhabilitacion?.fechaInicial || null,
+          fechaFinal: entrada.inhabilitacion?.fechaFinal || null,
+        };
+      }
       break;
 
-    case 'INDEMNIZACION':
+    case "INDEMNIZACION":
       sancionBase.indemnizacion = {
         monto: formatearMonto(entrada.multa?.monto),
         moneda: null,
@@ -98,10 +114,13 @@ const construirTipoSancionParticular = (sancion, entrada, tipoPersona) => {
       };
       break;
 
-    case 'SANCION_ECONOMICA':
+    case "SANCION_ECONOMICA":
       sancionBase.sancionEconomica = {
         monto: formatearMonto(entrada.multa?.monto),
-        moneda: entrada.multa?.moneda?.valor === 'PESO MEXICANO' ? 'MXN' : entrada.multa?.moneda?.valor || null,
+        moneda:
+          entrada.multa?.moneda?.valor === "PESO MEXICANO"
+            ? "MXN"
+            : entrada.multa?.moneda?.valor || null,
         plazoPago: {
           anios: null,
           meses: null,
@@ -118,8 +137,8 @@ const construirTipoSancionParticular = (sancion, entrada, tipoPersona) => {
   }
 
   // Campos específicos para personas morales
-  if (tipoPersona === 'moral') {
-    if (claveMapeada === 'SUSPENSION_ACTIVIDADES') {
+  if (tipoPersona === "moral") {
+    if (claveMapeada === "SUSPENSION_ACTIVIDADES") {
       sancionBase.suspensionActividades = {
         plazoSuspensionAnios: null,
         plazoSuspensionMeses: null,
@@ -129,20 +148,20 @@ const construirTipoSancionParticular = (sancion, entrada, tipoPersona) => {
       };
     }
 
-    if (claveMapeada === 'DISOLUCION_SOCIEDAD') {
+    if (claveMapeada === "DISOLUCION_SOCIEDAD") {
       sancionBase.disolucionSociedad = {
         fechaDisolucion: null,
       };
     }
 
-    if (claveMapeada === 'OTRO') {
+    if (claveMapeada === "OTRO") {
       sancionBase.otro = {
         denominacionSancion: sancion.valor || null,
       };
     }
   } else {
     // Para personas físicas, el campo otro es diferente
-    if (claveMapeada === 'OTRO') {
+    if (claveMapeada === "OTRO") {
       sancionBase.otro = null;
       sancionBase.denominacionSancion = sancion.valor || null;
     }
@@ -154,12 +173,12 @@ const construirTipoSancionParticular = (sancion, entrada, tipoPersona) => {
 const transformarParticular = (entrada, tipoPersona) => {
   // Implementación de transformarParticular
   // Función auxiliar para procesar tipoFalta
-  const procesarTipoFalta = falta => ({
+  const procesarTipoFalta = (falta) => ({
     clave:
-      typeof falta === 'object'
+      typeof falta === "object"
         ? mapearClaveFaltaParticular(falta.clave, tipoPersona)
         : mapearClaveFaltaParticular(falta, tipoPersona),
-    valor: typeof falta === 'object' ? falta.valor || null : falta || null,
+    valor: typeof falta === "object" ? falta.valor || null : falta || null,
     normatividadInfringida: [
       {
         nombreNormatividad: null,
@@ -172,7 +191,7 @@ const transformarParticular = (entrada, tipoPersona) => {
 
   // Función auxiliar para procesar domicilio
   const procesarDomicilio = (domicilio, tipo) => {
-    if (tipo === 'mexico') {
+    if (tipo === "mexico") {
       return {
         tipoVialidad: null,
         nombreVialidad: domicilio?.vialidad?.valor || null,
@@ -181,7 +200,8 @@ const transformarParticular = (entrada, tipoPersona) => {
         coloniaLocalidad: domicilio?.localidad?.valor || null,
         municipioAlcaldia: domicilio?.municipio || null,
         codigoPostal: domicilio?.codigoPostal || null,
-        entidadFederativa: domicilio?.entidadFederativa?.clave || getEntidadFederativa(),
+        entidadFederativa:
+          domicilio?.entidadFederativa?.clave || getEntidadFederativa(),
       };
     }
     return {
@@ -196,13 +216,14 @@ const transformarParticular = (entrada, tipoPersona) => {
   };
 
   // Función auxiliar para construir el objeto resolución
-  const construirResolucion = entrada => {
+  const construirResolucion = (entrada) => {
     const resolucion = {
       tituloDocumento: null,
       fechaResolucion: entrada.resolucion?.fechaResolucion || null,
       fechaNotificacion: entrada.resolucion?.fechaNotificacion || null,
       fechaResolucionFirme: entrada.resolucion?.fechaResolucionFirme || null,
-      fechaNotificacionFirme: entrada.resolucion?.fechaNotificacionFirme || null,
+      fechaNotificacionFirme:
+        entrada.resolucion?.fechaNotificacionFirme || null,
       autoridadResolutora: entrada.autoridadSancionadora || null,
       autoridadInvestigadora: null,
       autoridadSubstanciadora: null,
@@ -227,38 +248,49 @@ const transformarParticular = (entrada, tipoPersona) => {
     faltaCometida: [procesarTipoFalta(entrada.tipoFalta)],
     resolucion: construirResolucion(entrada),
     tipoSancion:
-      entrada.tipoSancion?.map(sancion => construirTipoSancionParticular(sancion, entrada, tipoPersona)) || [],
+      entrada.tipoSancion?.map((sancion) =>
+        construirTipoSancionParticular(sancion, entrada, tipoPersona)
+      ) || [],
     observaciones: entrada.observaciones || null,
   };
 
-  const construirDatosPersona = persona => {
+  const construirDatosPersona = (persona) => {
     if (!persona) return null;
 
     const datos = {};
 
     if (persona.nombres) datos.nombres = persona.nombres;
     if (persona.primerApellido) datos.primerApellido = persona.primerApellido;
-    if (persona.segundoApellido) datos.segundoApellido = persona.segundoApellido;
+    if (persona.segundoApellido)
+      datos.segundoApellido = persona.segundoApellido;
     if (persona.curp) datos.curp = persona.curp;
     if (persona.rfc) datos.rfc = persona.rfc;
 
     return Object.keys(datos).length > 0 ? datos : null;
   };
 
-  if (tipoPersona === 'fisica') {
-    const nombreCompleto = entrada.particularSancionado?.nombreRazonSocial || null;
-    const partes = nombreCompleto.split(' ').filter(Boolean);
-    const nombres = partes.length > 2 ? partes.slice(0, -2).join(' ') : null;
+  if (tipoPersona === "fisica") {
+    const nombreCompleto =
+      entrada.particularSancionado?.nombreRazonSocial || null;
+    const partes = nombreCompleto.split(" ").filter(Boolean);
+    const nombres = partes.length > 2 ? partes.slice(0, -2).join(" ") : null;
     const primerApellido = partes.length > 1 ? partes[partes.length - 2] : null;
-    const segundoApellido = partes.length > 0 ? partes[partes.length - 1] : null;
+    const segundoApellido =
+      partes.length > 0 ? partes[partes.length - 1] : null;
 
     const datosGenerales = {
       nombres,
       primerApellido,
       segundoApellido,
       tipoDomicilio: null,
-      domicilioMexico: procesarDomicilio(entrada.particularSancionado?.domicilioMexico, 'mexico'),
-      domicilioExtranjero: procesarDomicilio(entrada.particularSancionado?.domicilioExtranjero, 'extranjero'),
+      domicilioMexico: procesarDomicilio(
+        entrada.particularSancionado?.domicilioMexico,
+        "mexico"
+      ),
+      domicilioExtranjero: procesarDomicilio(
+        entrada.particularSancionado?.domicilioExtranjero,
+        "extranjero"
+      ),
     };
 
     if (entrada.particularSancionado?.curp) {
@@ -279,8 +311,14 @@ const transformarParticular = (entrada, tipoPersona) => {
     nombreRazonSocial: entrada.particularSancionado?.nombreRazonSocial || null,
     objetoSocial: entrada.particularSancionado?.objetoSocial || null,
     tipoDomicilio: null,
-    domicilioMexico: procesarDomicilio(entrada.particularSancionado?.domicilioMexico, 'mexico'),
-    domicilioExtranjero: procesarDomicilio(entrada.particularSancionado?.domicilioExtranjero, 'extranjero'),
+    domicilioMexico: procesarDomicilio(
+      entrada.particularSancionado?.domicilioMexico,
+      "mexico"
+    ),
+    domicilioExtranjero: procesarDomicilio(
+      entrada.particularSancionado?.domicilioExtranjero,
+      "extranjero"
+    ),
   };
 
   if (entrada.particularSancionado?.rfc) {
@@ -304,7 +342,8 @@ const transformarParticular = (entrada, tipoPersona) => {
     }
 
     if (representanteLegal) {
-      resultado.datosDirGeneralReprLegal.representanteLegal = representanteLegal;
+      resultado.datosDirGeneralReprLegal.representanteLegal =
+        representanteLegal;
     }
   }
 
